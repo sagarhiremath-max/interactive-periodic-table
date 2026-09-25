@@ -1,0 +1,39 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "npm",
+      "script": "dev",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "typescript",
+        "pattern": "$tsc",
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*VITE.*ready in.*",
+          "endsPattern": ".*Local:.*http://localhost.*"
+        }
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "label": "Start Dev Server (Vite)",
+      "detail": "Runs npm run dev to launch the development server on http://localhost:5173"
+    },
+    {
+      "type": "npm",
+      "script": "build",
+      "group": "build",
+      "label": "Build for Production",
+      "detail": "Runs tsc -b && vite build to bundle production assets"
+    },
+    {
+      "type": "npm",
+      "script": "preview",
+      "isBackground": true,
+      "label": "Preview Production Build",
+      "detail": "Runs vite preview on http://localhost:4173"
+    }
+  ]
+}
