@@ -179,10 +179,10 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
         </div>
       )}
 
-      {/* Overflow scroll container on mobile, full-fit on desktop */}
+      {/* Overflow scroll container on mobile and compact displays, full-fit on large screens */}
       <div
         ref={containerRef}
-        className="w-full flex-1 min-h-0 flex flex-col overflow-x-auto overflow-y-hidden rounded-xl transition-all border border-transparent focus-within:border-cyan-500/30"
+        className="w-full flex-1 min-h-0 flex flex-col overflow-x-auto overflow-y-auto rounded-xl transition-all border border-transparent focus-within:border-cyan-500/30"
         style={{ scrollbarWidth: 'thin' }}
         tabIndex={0}
         aria-label="Interactive periodic table of elements grid"
@@ -218,7 +218,7 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
               <div
                 className="grid text-[10px] font-mono font-bold text-slate-500 text-center select-none shrink-0"
                 style={{
-                  gridTemplateRows: 'repeat(7, minmax(0, 1fr)) clamp(2px, 0.4vh, 6px) repeat(2, minmax(0, 1fr))',
+                  gridTemplateRows: 'repeat(7, minmax(clamp(50px, 6.2vh, 72px), 1fr)) clamp(6px, 0.8vh, 12px) repeat(2, minmax(clamp(50px, 6.2vh, 72px), 1fr))',
                   width: '14px',
                 }}
               >
@@ -241,8 +241,8 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
                     : 'repeat(18, minmax(36px, 1fr))',
                 gridTemplateRows:
                   layoutMode === 'extended'
-                    ? 'repeat(7, minmax(0, 1fr))'
-                    : 'repeat(7, minmax(0, 1fr)) clamp(2px, 0.4vh, 6px) repeat(2, minmax(0, 1fr))',
+                    ? 'repeat(7, minmax(clamp(50px, 6.2vh, 72px), 1fr))'
+                    : 'repeat(7, minmax(clamp(50px, 6.2vh, 72px), 1fr)) clamp(6px, 0.8vh, 12px) repeat(2, minmax(clamp(50px, 6.2vh, 72px), 1fr))',
               }}
             >
 

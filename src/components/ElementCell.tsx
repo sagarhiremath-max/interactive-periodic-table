@@ -180,10 +180,10 @@ export const ElementCell: React.FC<ElementCellProps> = ({
       />
 
       {/* Top row: atomic number & state / favorite indicator */}
-      <div className="flex items-center justify-between w-full mt-0 leading-none">
+      <div className="flex items-center justify-between w-full leading-none shrink-0 pt-0.5">
         <span
-          className={`font-mono text-[8px] sm:text-[9px] xl:text-[10px] font-semibold ${
-            darkMode ? 'text-slate-400' : 'text-slate-500'
+          className={`font-mono text-[clamp(8px,0.85vw,10.5px)] font-bold tracking-tight ${
+            darkMode ? 'text-slate-300' : 'text-slate-700'
           }`}
         >
           {element.number}
@@ -205,31 +205,31 @@ export const ElementCell: React.FC<ElementCellProps> = ({
         </div>
       </div>
 
-      {/* Symbol */}
-      <div className="text-center my-0">
+      {/* Center: Symbol */}
+      <div className="flex items-center justify-center w-full my-auto py-0.5">
         <span
-          className="text-xs sm:text-sm lg:text-base font-bold tracking-tight block leading-tight"
+          className="text-[clamp(13px,1.35vw,17px)] font-extrabold tracking-tight leading-none select-none"
           style={{ color: darkMode ? '#ffffff' : '#0f172a' }}
         >
           {element.symbol}
         </span>
       </div>
 
-      {/* Bottom info: name & atomic mass or trend value */}
-      <div className="flex flex-col text-center w-full leading-tight">
+      {/* Bottom info: name & atomic mass or trend value on separate lines */}
+      <div className="flex flex-col items-center justify-end w-full leading-[1.15] shrink-0 pb-0.5">
         {trendMode === 'none' ? (
           <>
             <span
-              className={`text-[7.5px] sm:text-[8.5px] xl:text-[9px] font-medium truncate hidden sm:block ${
-                darkMode ? 'text-slate-300' : 'text-slate-600'
+              className={`text-[clamp(7.5px,0.8vw,9.5px)] font-medium text-center w-full px-0.5 line-clamp-2 break-words ${
+                darkMode ? 'text-slate-200' : 'text-slate-700'
               }`}
               title={element.name}
             >
               {element.name}
             </span>
             <span
-              className={`font-mono text-[7px] sm:text-[7.5px] xl:text-[8px] ${
-                darkMode ? 'text-slate-400' : 'text-slate-600'
+              className={`font-mono text-[clamp(6.5px,0.72vw,8.5px)] text-center leading-none mt-0.5 ${
+                darkMode ? 'text-slate-400' : 'text-slate-500'
               }`}
             >
               {element.atomicMass}
@@ -237,7 +237,7 @@ export const ElementCell: React.FC<ElementCellProps> = ({
           </>
         ) : (
           <span
-            className={`font-mono text-[7.5px] sm:text-[8.5px] xl:text-[9px] font-bold truncate ${
+            className={`font-mono text-[clamp(7.5px,0.8vw,9.5px)] font-bold text-center w-full px-0.5 truncate ${
               isMissingTrendData
                 ? 'text-slate-500 italic'
                 : darkMode
