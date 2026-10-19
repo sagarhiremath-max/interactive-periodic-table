@@ -12,6 +12,7 @@ import {
   Layers,
   HelpCircle,
   BookOpen,
+  RotateCcw,
 } from 'lucide-react';
 import type { ElementData } from '../data/elements';
 import { getStateAtTemperature } from '../utils/helpers';
@@ -40,6 +41,8 @@ interface UnifiedControlBarProps {
   darkMode: boolean;
   onOpenTrendExplanation: () => void;
   onOpenGuide?: () => void;
+  hasActiveFilters?: boolean;
+  onResetAll?: () => void;
 }
 
 export const UnifiedControlBar: React.FC<UnifiedControlBarProps> = ({
@@ -60,6 +63,8 @@ export const UnifiedControlBar: React.FC<UnifiedControlBarProps> = ({
   darkMode,
   onOpenTrendExplanation,
   onOpenGuide,
+  hasActiveFilters = false,
+  onResetAll,
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
 
@@ -149,18 +154,18 @@ export const UnifiedControlBar: React.FC<UnifiedControlBarProps> = ({
                 key={item.id}
                 type="button"
                 onClick={() => onSelectClassification(item.id)}
-                className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold transition-all flex items-center gap-1 ${
+                className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold transition-all flex items-center gap-1 border ${
                   isActive
-                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-xs font-bold'
+                    ? 'bg-cyan-500 text-slate-950 font-bold border-cyan-400 shadow-xs'
                     : darkMode
-                    ? 'bg-slate-800/80 hover:bg-slate-700 text-slate-300'
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                    ? 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 border-slate-700/60'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
                 }`}
               >
                 <span>{item.label}</span>
                 <span
-                  className={`text-[9px] px-1 py-0.2 rounded-full ${
-                    isActive ? 'bg-black/20 text-white' : 'bg-white/10 text-slate-400'
+                  className={`text-[9px] px-1 py-0.2 rounded-full font-mono ${
+                    isActive ? 'bg-black/20 text-slate-950 font-bold' : 'bg-white/10 text-slate-400'
                   }`}
                 >
                   {item.count}
@@ -177,16 +182,16 @@ export const UnifiedControlBar: React.FC<UnifiedControlBarProps> = ({
               onlyFavorites
                 ? 'bg-amber-400 text-slate-950 border-amber-300 font-bold shadow-xs'
                 : darkMode
-                ? 'bg-amber-400/10 hover:bg-amber-400/20 border-amber-400/30 text-amber-300'
-                : 'bg-amber-50 hover:bg-amber-100 border-amber-200 text-amber-800'
+                ? 'bg-slate-800/80 hover:bg-slate-700 border-slate-700/60 text-slate-300 hover:text-amber-300'
+                : 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700 hover:text-amber-800'
             }`}
             title="Filter by favorited elements"
           >
-            <Star size={11} className={onlyFavorites ? 'fill-slate-950' : 'fill-amber-400 text-amber-400'} />
+            <Star size={11} className={onlyFavorites ? 'fill-slate-950 text-slate-950' : 'fill-amber-400 text-amber-400'} />
             <span>Favs</span>
             <span
-              className={`text-[9px] px-1 py-0.2 rounded-full ${
-                onlyFavorites ? 'bg-black/20 text-slate-950 font-mono' : 'bg-amber-400/20 text-amber-300 font-mono'
+              className={`text-[9px] px-1 py-0.2 rounded-full font-mono ${
+                onlyFavorites ? 'bg-black/20 text-slate-950 font-bold' : 'bg-amber-400/20 text-amber-300'
               }`}
             >
               {favoritesCount}
@@ -194,14 +199,14 @@ export const UnifiedControlBar: React.FC<UnifiedControlBarProps> = ({
           </button>
 
           {/* Block Selection */}
-          <div className="flex items-center rounded-lg bg-slate-800/60 p-0.5 border border-slate-700/60 ml-1">
+          <div className="flex items-center rounded-lg bg-slate-950/60 p-0.5 border border-slate-700/70 ml-0.5">
             {blocks.map((b) => (
               <button
                 key={b}
                 type="button"
                 onClick={() => onSelectBlock(b)}
                 className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase transition-colors ${
-                  activeBlock === b ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+                  activeBlock === b ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
                 }`}
               >
                 {b === 'all' ? 'All' : `${b}`}
@@ -210,14 +215,14 @@ export const UnifiedControlBar: React.FC<UnifiedControlBarProps> = ({
           </div>
 
           {/* State Selection */}
-          <div className="flex items-center rounded-lg bg-slate-800/60 p-0.5 border border-slate-700/60">
+          <div className="flex items-center rounded-lg bg-slate-950/60 p-0.5 border border-slate-700/70">
             {states.map((s) => (
               <button
                 key={s}
                 type="button"
                 onClick={() => onSelectStateFilter(s)}
                 className={`px-1.5 py-0.5 rounded text-[10px] font-medium capitalize transition-colors ${
-                  activeStateFilter === s ? 'bg-cyan-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+                  activeStateFilter === s ? 'bg-cyan-600 text-white shadow-xs font-semibold' : 'text-slate-400 hover:text-white'
                 }`}
               >
                 {s === 'all' ? 'All' : s.slice(0, 3)}
@@ -226,7 +231,7 @@ export const UnifiedControlBar: React.FC<UnifiedControlBarProps> = ({
           </div>
         </div>
 
-        {/* Right: Periodic Trends selector */}
+        {/* Right: Periodic Trends selector & Reset */}
         <div className="flex items-center gap-1.5 flex-wrap">
           <div className="flex items-center gap-1 text-[11px] font-bold text-slate-400 uppercase">
             <TrendingUp size={12} className="text-cyan-400" />
@@ -242,12 +247,12 @@ export const UnifiedControlBar: React.FC<UnifiedControlBarProps> = ({
                   key={btn.id}
                   type="button"
                   onClick={() => onSelectTrend(btn.id)}
-                  className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold transition-all flex items-center gap-1 ${
+                  className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold transition-all flex items-center gap-1 border ${
                     isActive
-                      ? 'bg-gradient-to-r from-cyan-500 to-indigo-600 text-white shadow-xs font-bold'
+                      ? 'bg-cyan-500 text-slate-950 font-bold border-cyan-400 shadow-xs'
                       : darkMode
-                      ? 'bg-slate-800/80 hover:bg-slate-700 text-slate-300'
-                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      ? 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 border-slate-700/60'
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
                   }`}
                 >
                   <Icon size={11} />
@@ -257,11 +262,24 @@ export const UnifiedControlBar: React.FC<UnifiedControlBarProps> = ({
             })}
           </div>
 
+          {/* Reset Filters button directly in toolbar */}
+          {hasActiveFilters && onResetAll && (
+            <button
+              type="button"
+              onClick={onResetAll}
+              className="px-2 py-0.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-rose-300 text-[11px] font-semibold flex items-center gap-1 transition-colors"
+              title="Reset all active filters and trends"
+            >
+              <RotateCcw size={11} />
+              <span>Reset</span>
+            </button>
+          )}
+
           {onOpenGuide && (
             <button
               type="button"
               onClick={onOpenGuide}
-              className="p-1 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-white/5 transition-colors border border-white/5 ml-1"
+              className="p-1 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-white/5 transition-colors border border-white/5 ml-0.5"
               title="Chemistry Guide & Overview"
             >
               <BookOpen size={13} />

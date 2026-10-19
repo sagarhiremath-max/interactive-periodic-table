@@ -104,20 +104,25 @@ export const ElementCell: React.FC<ElementCellProps> = ({
         gridColumnStart: colStart,
         gridRowStart: rowStart,
         borderColor: isSelected
-          ? '#38bdf8'
+          ? '#22d3ee'
           : isSearchMatch
-          ? '#a855f7'
+          ? '#c084fc'
           : isHovered
           ? cat.color
           : activeTrendColor
-          ? `${activeTrendColor}80`
+          ? `${activeTrendColor}90`
           : undefined,
-        backgroundColor:
-          activeTrendColor
-            ? darkMode
-              ? `${activeTrendColor}25`
-              : `${activeTrendColor}18`
-            : undefined,
+        backgroundColor: isSelected
+          ? darkMode
+            ? '#082f49'
+            : '#e0f2fe'
+          : activeTrendColor
+          ? darkMode
+            ? `${activeTrendColor}25`
+            : `${activeTrendColor}18`
+          : darkMode
+          ? `${cat.color}14`
+          : `${cat.color}0a`,
       }}
       onClick={() => onClick(element)}
       onKeyDown={(e) => {
@@ -129,40 +134,40 @@ export const ElementCell: React.FC<ElementCellProps> = ({
       onMouseEnter={(e) => onMouseEnter(element, e)}
       onMouseLeave={onMouseLeave}
       className={`
-        relative select-none cursor-pointer rounded-lg transition-all duration-150 ease-out
+        relative select-none cursor-pointer rounded-lg transition-transform duration-100 ease-out
         flex flex-col justify-between p-0.5 sm:p-1 lg:p-0.5 xl:p-1 border
         w-full h-full min-h-0
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:z-30
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-950 focus-visible:z-20
         ${
           darkMode
-            ? 'bg-slate-900/90 text-slate-100 hover:bg-slate-800'
-            : 'bg-white/95 text-slate-800 hover:bg-slate-50'
+            ? 'text-slate-100 hover:bg-slate-800/80'
+            : 'text-slate-800 hover:bg-slate-100'
         }
         ${
           isDimmed
             ? 'opacity-20 grayscale pointer-events-none scale-95'
-            : 'opacity-100 hover:scale-[1.08] hover:z-30 hover:shadow-xl'
+            : 'opacity-100 hover:scale-[1.03] hover:z-10'
         }
         ${
           isSelected
-            ? 'ring-2 ring-cyan-400 shadow-[0_0_15px_rgba(56,189,248,0.5)] z-20 scale-[1.03]'
+            ? 'ring-2 ring-cyan-400 ring-offset-1 ring-offset-slate-950 z-20 font-bold'
             : ''
         }
         ${
           isSearchMatch
-            ? 'ring-2 ring-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.5)] z-20 font-bold'
+            ? 'ring-2 ring-purple-400 ring-offset-1 ring-offset-slate-950 z-20 font-bold'
             : ''
         }
         ${
           isComparing
-            ? 'ring-2 ring-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.5)]'
+            ? 'ring-2 ring-amber-400 ring-offset-1 ring-offset-slate-950 z-20'
             : ''
         }
         ${
           !isSelected && !isSearchMatch && !activeTrendColor
             ? darkMode
-              ? cat.borderColor
-              : 'border-slate-200 shadow-sm'
+              ? 'border-slate-800/80'
+              : 'border-slate-200'
             : ''
         }
         ${isMissingTrendData && trendMode !== 'none' ? 'border-dashed opacity-60' : ''}
@@ -170,7 +175,7 @@ export const ElementCell: React.FC<ElementCellProps> = ({
     >
       {/* Category or Trend accent top bar */}
       <div
-        className="absolute top-0 left-0 right-0 h-0.5 rounded-t-lg transition-opacity"
+        className="absolute top-0 left-0 right-0 h-[2.5px] rounded-t-lg transition-opacity"
         style={{ backgroundColor: activeTrendColor || cat.color }}
       />
 

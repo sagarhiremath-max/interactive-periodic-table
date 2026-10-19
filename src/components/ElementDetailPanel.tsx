@@ -149,58 +149,53 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
   return (
     <div
       className={`
-        w-full h-full max-h-full rounded-2xl border flex flex-col shadow-xl overflow-hidden transition-all duration-200
+        w-full h-full max-h-full rounded-2xl border flex flex-col shadow-lg overflow-hidden transition-all duration-200 select-none
         ${
           darkMode
-            ? 'bg-slate-900 border-slate-700/80 text-white'
-            : 'bg-white border-slate-200 text-slate-900'
+            ? 'bg-slate-900/95 border-slate-800 text-white'
+            : 'bg-white border-slate-200 text-slate-900 shadow-sm'
         }
       `}
     >
-      {/* Header Banner with Category Accent Gradient */}
+      {/* Top Category Accent Line */}
+      <div className="h-[2.5px] w-full shrink-0" style={{ backgroundColor: cat.color }} />
+
+      {/* Header Banner */}
       <div
-        className="relative px-3 py-2 border-b flex items-center justify-between shrink-0"
-        style={{
-          background: darkMode
-            ? `linear-gradient(135deg, ${cat.color}25 0%, rgba(15,23,42,0.95) 100%)`
-            : `linear-gradient(135deg, ${cat.color}15 0%, rgba(255,255,255,0.95) 100%)`,
-          borderColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-        }}
+        className={`px-3.5 py-2.5 border-b flex items-center justify-between shrink-0 ${
+          darkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-50/80 border-slate-200'
+        }`}
       >
-        {/* Left: Atomic Symbol Box & Title */}
-        <div className="flex items-center gap-2">
+        {/* Left: Prominent Atomic Symbol Box & Title */}
+        <div className="flex items-center gap-3">
           <div
-            className="w-10 h-10 rounded-lg flex flex-col items-center justify-center font-bold shadow-xs border relative overflow-hidden shrink-0"
+            className="w-13 h-13 rounded-xl flex flex-col items-center justify-center font-bold border-2 relative overflow-hidden shrink-0 shadow-sm"
             style={{
-              backgroundColor: `${cat.color}25`,
+              backgroundColor: darkMode ? `${cat.color}20` : `${cat.color}15`,
               borderColor: cat.color,
               color: cat.color,
             }}
           >
-            <div
-              className="absolute top-0 left-0 right-0 h-0.5"
-              style={{ backgroundColor: cat.color }}
-            />
-            <span className="text-[8px] font-mono leading-none opacity-80">{currentElement.number}</span>
-            <span className="text-base font-black leading-none my-0.2">{currentElement.symbol}</span>
+            <span className="text-[9px] font-mono leading-none opacity-80">{currentElement.number}</span>
+            <span className="text-2xl font-black leading-none my-0.5">{currentElement.symbol}</span>
           </div>
 
           <div>
             <div className="flex items-center gap-1.5 flex-wrap">
-              <h2 className="text-sm font-bold tracking-tight">{currentElement.name}</h2>
+              <h2 className="text-base sm:text-lg font-bold tracking-tight leading-none text-white">{currentElement.name}</h2>
               <span
-                className="px-1.5 py-0.2 rounded-full text-[8.5px] font-semibold border"
+                className="px-1.5 py-0.2 rounded-md text-[9px] font-semibold border"
                 style={{
-                  backgroundColor: `${cat.color}20`,
-                  borderColor: `${cat.color}50`,
+                  backgroundColor: `${cat.color}18`,
+                  borderColor: `${cat.color}40`,
                   color: cat.color,
                 }}
               >
                 {currentElement.categoryName}
               </span>
             </div>
-            <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.2">
-              <span>{currentElement.atomicMass} u</span>
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-1 flex-wrap">
+              <span className="font-mono text-slate-300 font-semibold">{currentElement.atomicMass} u</span>
               <span>•</span>
               <span className="capitalize font-medium flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: stateColor }} />
@@ -354,58 +349,68 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
               <p className="text-[11px]">{currentElement.summary}</p>
             </div>
 
-            {/* Fundamental Properties Grid */}
+            {/* Group 1: Atomic & Electronic Structure */}
             <div>
-              <h3 className="text-[11px] uppercase font-bold tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
-                <Layers size={13} />
-                <span>Atomic & Physical Properties</span>
+              <h3 className="text-[10px] uppercase font-bold tracking-wider text-slate-400 mb-1.5 flex items-center gap-1">
+                <Layers size={12} className="text-cyan-400" />
+                <span>Atomic & Electronic Structure</span>
               </h3>
 
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className={`p-2.5 rounded-xl border ${darkMode ? 'bg-slate-800/30 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-                  <span className="text-[10px] text-slate-400 block">Atomic Number</span>
+              <div className="grid grid-cols-2 gap-1.5 text-xs">
+                <div className={`p-2 rounded-lg border ${darkMode ? 'bg-slate-800/40 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+                  <span className="text-[9.5px] text-slate-400 block leading-tight">Atomic Number (Z)</span>
                   <strong className="text-sm font-bold font-mono">{currentElement.number}</strong>
                 </div>
 
-                <div className={`p-2.5 rounded-xl border ${darkMode ? 'bg-slate-800/30 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-                  <span className="text-[10px] text-slate-400 block">Standard Atomic Mass</span>
+                <div className={`p-2 rounded-lg border ${darkMode ? 'bg-slate-800/40 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+                  <span className="text-[9.5px] text-slate-400 block leading-tight">Standard Atomic Weight</span>
                   <strong className="text-sm font-bold font-mono">{currentElement.atomicMass} u</strong>
                 </div>
 
-                <div className={`p-2.5 rounded-xl border ${darkMode ? 'bg-slate-800/30 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-                  <span className="text-[10px] text-slate-400 block">Block</span>
-                  <strong className="text-sm uppercase font-bold">{currentElement.block}-block</strong>
+                <div className={`p-2 rounded-lg border ${darkMode ? 'bg-slate-800/40 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+                  <span className="text-[9.5px] text-slate-400 block leading-tight">Orbital Block</span>
+                  <strong className="text-xs uppercase font-bold text-indigo-400">{currentElement.block}-block</strong>
                 </div>
 
-                <div className={`p-2.5 rounded-xl border ${darkMode ? 'bg-slate-800/30 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-                  <span className="text-[10px] text-slate-400 block">Period / Group</span>
-                  <strong className="text-sm font-bold">P{currentElement.period} · G{currentElement.group}</strong>
+                <div className={`p-2 rounded-lg border ${darkMode ? 'bg-slate-800/40 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+                  <span className="text-[9.5px] text-slate-400 block leading-tight">Period & Group</span>
+                  <strong className="text-xs font-bold">Period {currentElement.period} · Group {currentElement.group}</strong>
                 </div>
+              </div>
+            </div>
 
-                <div className={`p-2.5 rounded-xl border ${darkMode ? 'bg-slate-800/30 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-                  <span className="text-[10px] text-slate-400 block">Atomic Radius</span>
-                  <strong className="text-sm font-bold font-mono">
+            {/* Group 2: Physical & Periodic Metrics */}
+            <div>
+              <h3 className="text-[10px] uppercase font-bold tracking-wider text-slate-400 mb-1.5 flex items-center gap-1">
+                <Sparkles size={12} className="text-indigo-400" />
+                <span>Physical & Periodic Metrics</span>
+              </h3>
+
+              <div className="grid grid-cols-2 gap-1.5 text-xs">
+                <div className={`p-2 rounded-lg border ${darkMode ? 'bg-slate-800/40 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+                  <span className="text-[9.5px] text-slate-400 block leading-tight">Atomic Radius</span>
+                  <strong className="text-xs font-bold font-mono">
                     {atomicRadius ? `${atomicRadius} pm` : <span className="text-slate-500 font-normal">N/A</span>}
                   </strong>
                 </div>
 
-                <div className={`p-2.5 rounded-xl border ${darkMode ? 'bg-slate-800/30 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-                  <span className="text-[10px] text-slate-400 block">Electronegativity (Pauling)</span>
-                  <strong className="text-sm font-bold font-mono">
+                <div className={`p-2 rounded-lg border ${darkMode ? 'bg-slate-800/40 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+                  <span className="text-[9.5px] text-slate-400 block leading-tight">Electronegativity</span>
+                  <strong className="text-xs font-bold font-mono">
                     {currentElement.electronegativity ?? <span className="text-slate-500 font-normal">N/A</span>}
                   </strong>
                 </div>
 
-                <div className={`p-2.5 rounded-xl border ${darkMode ? 'bg-slate-800/30 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-                  <span className="text-[10px] text-slate-400 block">1st Ionization Energy</span>
-                  <strong className="text-sm font-bold font-mono">
+                <div className={`p-2 rounded-lg border ${darkMode ? 'bg-slate-800/40 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+                  <span className="text-[9.5px] text-slate-400 block leading-tight">1st Ionization Energy</span>
+                  <strong className="text-xs font-bold font-mono">
                     {currentElement.ionizationEnergy ? `${currentElement.ionizationEnergy} kJ/mol` : <span className="text-slate-500 font-normal">N/A</span>}
                   </strong>
                 </div>
 
-                <div className={`p-2.5 rounded-xl border ${darkMode ? 'bg-slate-800/30 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-                  <span className="text-[10px] text-slate-400 block">Density (at STP)</span>
-                  <strong className="text-sm font-bold font-mono">
+                <div className={`p-2 rounded-lg border ${darkMode ? 'bg-slate-800/40 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+                  <span className="text-[9.5px] text-slate-400 block leading-tight">Density (at STP)</span>
+                  <strong className="text-xs font-bold font-mono">
                     {currentElement.density ? `${currentElement.density} g/cm³` : <span className="text-slate-500 font-normal">N/A</span>}
                   </strong>
                 </div>

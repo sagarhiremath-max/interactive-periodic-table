@@ -114,12 +114,12 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="max-w-[1720px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-2">
         {/* Branding & Title */}
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-cyan-500/20 shrink-0">
-            <Atom size={18} className="animate-spin" style={{ animationDuration: '20s' }} />
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0">
+            <Atom size={18} className="animate-spin" style={{ animationDuration: '24s' }} />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <h1 className="text-base sm:text-lg font-black tracking-tight leading-none bg-gradient-to-r from-cyan-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">
+              <h1 className="text-base sm:text-lg font-black tracking-tight leading-none text-white">
                 Periodic Table
               </h1>
               <span className="text-[9px] uppercase font-bold tracking-widest px-1.5 py-0.2 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
@@ -303,7 +303,7 @@ export const Header: React.FC<HeaderProps> = ({
             type="button"
             onClick={onOpenQuiz}
             title="Test your periodic table knowledge"
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow-sm shadow-orange-500/20 transition-all font-bold text-[11px]"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-amber-400 hover:bg-amber-300 text-slate-950 border border-amber-300 shadow-xs transition-colors text-[11px]"
           >
             <Award size={13} />
             <span>Quiz</span>

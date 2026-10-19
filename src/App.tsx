@@ -198,6 +198,8 @@ export function App() {
           darkMode={darkMode}
           onOpenTrendExplanation={handleOpenTrendExplanation}
           onOpenGuide={handleOpenGuide}
+          hasActiveFilters={hasActiveFiltersOrSearch}
+          onResetAll={handleResetAll}
         />
 
         {/* Workspace: Left = Periodic Table (+ Legend), Right = Selected Element Details Panel */}
@@ -223,7 +225,7 @@ export function App() {
                 onSelectElement={(el) => setSelectedElement(el)}
                 onHoverElement={handleHoverElement}
                 onSelectCategory={handleCategorySelect}
-                onClearSearch={() => setSearchQuery('')}
+                onClearSearch={handleResetAll}
               />
             </div>
 

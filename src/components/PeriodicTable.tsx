@@ -150,30 +150,30 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
         </div>
       </div>
 
-      {/* Empty Search Results Message */}
-      {cleanQuery && matchingCount === 0 && (
+      {/* Empty Search / Filter Results Message */}
+      {hasAnyFilter && matchingCount === 0 && (
         <div
-          className={`my-3 p-5 rounded-2xl border text-center space-y-2.5 max-w-lg mx-auto ${
+          className={`my-2 p-4 rounded-xl border text-center space-y-2 max-w-md mx-auto shrink-0 ${
             darkMode
-              ? 'bg-rose-950/20 border-rose-500/30 text-rose-200'
-              : 'bg-rose-50 border-rose-200 text-rose-900 shadow-sm'
+              ? 'bg-slate-900/90 border-slate-700 text-slate-200'
+              : 'bg-white border-slate-200 text-slate-800 shadow-sm'
           }`}
         >
-          <SearchX className="mx-auto text-rose-400" size={32} />
-          <h4 className="text-sm font-bold">
-            No chemical elements found matching &ldquo;{searchQuery}&rdquo;
+          <SearchX className="mx-auto text-cyan-400" size={28} />
+          <h4 className="text-xs sm:text-sm font-bold">
+            No elements match your active filters {cleanQuery ? `(“${searchQuery}”)` : ''}
           </h4>
-          <p className="text-xs text-slate-300">
-            Suggestions: search by symbol (e.g. <strong>Fe</strong>, <strong>Au</strong>, <strong>U</strong>), atomic number (<strong>1–118</strong>), or element name.
+          <p className="text-[11px] text-slate-400 leading-relaxed">
+            Try adjusting your search query, block, category, or phase filters to view elements.
           </p>
           {onClearSearch && (
             <button
               type="button"
               onClick={onClearSearch}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 text-xs font-semibold transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition-colors"
             >
-              <RotateCcw size={13} />
-              <span>Clear Search Query</span>
+              <RotateCcw size={12} />
+              <span>Reset All Filters</span>
             </button>
           )}
         </div>
@@ -192,49 +192,59 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
             minWidth: layoutMode === 'extended' ? '1420px' : '720px',
             transition: 'transform 0.15s ease-out',
           }}
-          className="h-full flex-1 min-h-0 flex flex-col justify-center"
+          className="h-full flex-1 min-h-0 flex flex-col justify-between"
         >
-          {/* Main Grid: 18 columns standard or 32 columns extended */}
-          <div
-            className={`grid gap-0.5 sm:gap-1 relative h-full flex-1 min-h-0 ${
-              layoutMode === 'extended' ? 'grid-cols-32' : 'grid-cols-18'
-            }`}
-            style={{
-              gridTemplateColumns:
-                layoutMode === 'extended'
-                  ? 'repeat(32, minmax(36px, 1fr))'
-                  : 'repeat(18, minmax(36px, 1fr))',
-              gridTemplateRows:
-                layoutMode === 'extended'
-                  ? 'repeat(7, minmax(0, 1fr))'
-                  : 'repeat(7, minmax(0, 1fr)) clamp(2px, 0.4vh, 6px) repeat(2, minmax(0, 1fr))',
-            }}
-          >
-            {/* Standard layout Group Headers (1 to 18) */}
-            {layoutMode === 'standard' &&
-              groupLabelsStandard.map((grp) => (
-                <div
-                  key={grp.num}
-                  style={{ gridColumnStart: grp.num, gridRowStart: 1 }}
-                  className="flex flex-col items-center justify-end pb-0.5 text-[9px] text-slate-400 font-mono text-center pointer-events-none -mt-3.5"
-                >
-                  <span className="font-bold text-slate-300">{grp.num}</span>
-                  <span className="text-[7.5px] opacity-70 leading-none">{grp.iupac.split(' ')[1]}</span>
+          {/* Standard layout Group Headers (1 to 18) above the grid */}
+          {layoutMode === 'standard' && (
+            <div
+              className="grid gap-0.5 sm:gap-1 pb-1 text-[9px] font-mono text-slate-400 text-center select-none shrink-0 pl-[18px]"
+              style={{
+                gridTemplateColumns: 'repeat(18, minmax(36px, 1fr))',
+              }}
+            >
+              {groupLabelsStandard.map((grp) => (
+                <div key={grp.num} className="flex flex-col items-center leading-none">
+                  <span className="font-bold text-slate-400 text-[9px]">{grp.num}</span>
+                  <span className="text-[7.5px] text-slate-500 leading-none">{grp.iupac.split(' ')[1]}</span>
                 </div>
               ))}
+            </div>
+          )}
 
-            {/* Standard layout Period Headers (1 to 7) */}
-            {layoutMode === 'standard' &&
-              periods.map((p) => (
-                <div
-                  key={`p-${p}`}
-                  style={{ gridColumnStart: 1, gridRowStart: p }}
-                  className="absolute -left-4 top-0 bottom-0 flex items-center justify-center text-[10px] font-mono font-bold text-slate-500 pointer-events-none"
-                  aria-hidden="true"
-                >
-                  {p}
-                </div>
-              ))}
+          {/* Main Grid: 18 columns standard or 32 columns extended with period labels */}
+          <div className="flex flex-row items-stretch h-full flex-1 min-h-0 w-full gap-1">
+            {/* Standard layout Period Headers (1 to 7) on the left */}
+            {layoutMode === 'standard' && (
+              <div
+                className="grid text-[10px] font-mono font-bold text-slate-500 text-center select-none shrink-0"
+                style={{
+                  gridTemplateRows: 'repeat(7, minmax(0, 1fr)) clamp(2px, 0.4vh, 6px) repeat(2, minmax(0, 1fr))',
+                  width: '14px',
+                }}
+              >
+                {periods.map((p) => (
+                  <div key={`p-${p}`} style={{ gridRowStart: p }} className="flex items-center justify-center leading-none">
+                    {p}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div
+              className={`grid gap-0.5 sm:gap-1 relative h-full flex-1 min-h-0 ${
+                layoutMode === 'extended' ? 'grid-cols-32' : 'grid-cols-18'
+              }`}
+              style={{
+                gridTemplateColumns:
+                  layoutMode === 'extended'
+                    ? 'repeat(32, minmax(36px, 1fr))'
+                    : 'repeat(18, minmax(36px, 1fr))',
+                gridTemplateRows:
+                  layoutMode === 'extended'
+                    ? 'repeat(7, minmax(0, 1fr))'
+                    : 'repeat(7, minmax(0, 1fr)) clamp(2px, 0.4vh, 6px) repeat(2, minmax(0, 1fr))',
+              }}
+            >
 
             {/* Render all 118 Elements */}
             {elements.map((el) => {
@@ -327,6 +337,7 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
               </>
             )}
           </div>
+        </div>
         </div>
       </div>
     </div>
