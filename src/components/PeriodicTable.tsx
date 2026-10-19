@@ -197,9 +197,10 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
           {/* Standard layout Group Headers (1 to 18) above the grid */}
           {layoutMode === 'standard' && (
             <div
-              className="grid gap-0.5 sm:gap-1 pb-1 text-[9px] font-mono text-slate-400 text-center select-none shrink-0 pl-[18px]"
+              className="grid gap-0.5 sm:gap-1 pb-1 text-[9px] font-mono text-slate-400 text-center select-none shrink-0"
               style={{
                 gridTemplateColumns: 'repeat(18, minmax(36px, 1fr))',
+                paddingLeft: '18px',
               }}
             >
               {groupLabelsStandard.map((grp) => (

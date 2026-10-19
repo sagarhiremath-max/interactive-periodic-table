@@ -14,6 +14,7 @@ import {
   Star,
   GraduationCap,
   AlertCircle,
+  X,
 } from 'lucide-react';
 import { type ElementData, CATEGORIES, ELEMENTS_DATA } from '../data/elements';
 import { BohrModel } from './BohrModel';
@@ -29,6 +30,7 @@ interface ElementDetailPanelProps {
   onToggleFavorite?: (atomicNumber: number) => void;
   onSelectElement: (element: ElementData) => void;
   onAddToCompare?: (element: ElementData) => void;
+  onClose?: () => void;
 }
 
 export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
@@ -39,6 +41,7 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
   onToggleFavorite,
   onSelectElement,
   onAddToCompare,
+  onClose,
 }) => {
   // If no element clicked yet, show Hydrogen (#1) by default
   const currentElement = element || ELEMENTS_DATA[0];
@@ -249,6 +252,19 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
           >
             {copied ? <Check size={14} className="text-emerald-400" /> : <Share2 size={14} />}
           </button>
+
+          {/* Close Panel Button */}
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              title="Close element details"
+              aria-label="Close element details"
+              className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-300 hover:text-rose-200 transition-colors ml-0.5"
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
       </div>
 

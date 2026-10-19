@@ -33,7 +33,7 @@ export function App() {
   const [onlyFavorites, setOnlyFavorites] = useState<boolean>(false);
 
   // Modals & Panels
-  const [selectedElement, setSelectedElement] = useState<ElementData | null>(ELEMENTS_DATA[0]); // Start with Hydrogen
+  const [selectedElement, setSelectedElement] = useState<ElementData | null>(null);
   const [hoveredElement, setHoveredElement] = useState<ElementData | null>(null);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
@@ -79,6 +79,7 @@ export function App() {
     selectedStateFilter !== 'all' ||
     trendMode !== 'none' ||
     onlyFavorites ||
+    Boolean(selectedElement) ||
     Math.round(temperatureKelvin) !== 293;
 
   const handleResetAll = () => {
@@ -91,6 +92,7 @@ export function App() {
     setHoveredCategory(null);
     setTrendMode('none');
     setOnlyFavorites(false);
+    setSelectedElement(null);
   };
 
   const handleClassificationChange = (c: 'all' | 'metals' | 'nonmetals' | 'metalloids' | 'halogens') => {
@@ -242,22 +244,25 @@ export function App() {
             )}
           </div>
 
-          {/* RIGHT SIDE: Dedicated Element Information Panel with internal slide scrolling */}
-          <aside
-            id="element-detail-panel"
-            ref={detailPanelRef}
-            className="w-full lg:w-[335px] xl:w-[365px] 2xl:w-[395px] h-full flex flex-col min-h-0 shrink-0"
-          >
-            <ElementDetailPanel
-              element={selectedElement}
-              darkMode={darkMode}
-              temperatureKelvin={temperatureKelvin}
-              isFavorite={selectedElement ? isFavorite(selectedElement.number) : false}
-              onToggleFavorite={toggleFavorite}
-              onSelectElement={(el) => setSelectedElement(el)}
-              onAddToCompare={handleAddToCompare}
-            />
-          </aside>
+          {/* RIGHT SIDE: Dedicated Element Information Panel (appears only after clicking an element) */}
+          {selectedElement && (
+            <aside
+              id="element-detail-panel"
+              ref={detailPanelRef}
+              className="w-full lg:w-[340px] xl:w-[370px] 2xl:w-[400px] h-full flex flex-col min-h-0 shrink-0 animate-in fade-in slide-in-from-right-4 duration-200"
+            >
+              <ElementDetailPanel
+                element={selectedElement}
+                darkMode={darkMode}
+                temperatureKelvin={temperatureKelvin}
+                isFavorite={isFavorite(selectedElement.number)}
+                onToggleFavorite={toggleFavorite}
+                onSelectElement={(el) => setSelectedElement(el)}
+                onAddToCompare={handleAddToCompare}
+                onClose={() => setSelectedElement(null)}
+              />
+            </aside>
+          )}
         </div>
       </main>
 
