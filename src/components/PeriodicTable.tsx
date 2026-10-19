@@ -219,7 +219,7 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
               <div
                 className="grid text-[10px] font-mono font-bold text-slate-500 text-center select-none shrink-0"
                 style={{
-                  gridTemplateRows: 'repeat(7, minmax(clamp(50px, 6.2vh, 72px), 1fr)) clamp(6px, 0.8vh, 12px) repeat(2, minmax(clamp(50px, 6.2vh, 72px), 1fr))',
+                  gridTemplateRows: 'repeat(7, minmax(clamp(58px, 6.8vh, 78px), 1fr)) clamp(6px, 0.8vh, 12px) repeat(2, minmax(clamp(58px, 6.8vh, 78px), 1fr))',
                   width: '14px',
                 }}
               >
@@ -242,8 +242,8 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
                     : 'repeat(18, minmax(36px, 1fr))',
                 gridTemplateRows:
                   layoutMode === 'extended'
-                    ? 'repeat(7, minmax(clamp(50px, 6.2vh, 72px), 1fr))'
-                    : 'repeat(7, minmax(clamp(50px, 6.2vh, 72px), 1fr)) clamp(6px, 0.8vh, 12px) repeat(2, minmax(clamp(50px, 6.2vh, 72px), 1fr))',
+                    ? 'repeat(7, minmax(clamp(58px, 6.8vh, 78px), 1fr))'
+                    : 'repeat(7, minmax(clamp(58px, 6.8vh, 78px), 1fr)) clamp(6px, 0.8vh, 12px) repeat(2, minmax(clamp(58px, 6.8vh, 78px), 1fr))',
               }}
             >
 

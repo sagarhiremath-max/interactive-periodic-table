@@ -103,6 +103,8 @@ export const ElementCell: React.FC<ElementCellProps> = ({
       style={{
         gridColumnStart: colStart,
         gridRowStart: rowStart,
+        gridTemplateRows: '13px minmax(18px, 1.4fr) minmax(12px, auto) 12px',
+        rowGap: '1px',
         borderColor: isSelected
           ? '#22d3ee'
           : isSearchMatch
@@ -135,9 +137,9 @@ export const ElementCell: React.FC<ElementCellProps> = ({
       onMouseLeave={onMouseLeave}
       className={`
         relative select-none cursor-pointer rounded-lg transition-transform duration-100 ease-out
-        grid grid-rows-[13px_1fr_auto_13px] items-center justify-items-center
-        p-1 sm:p-1.5 border
-        w-full h-full min-h-0 box-border gap-0.5
+        grid items-center justify-items-center
+        px-1 py-1 sm:px-1.5 sm:py-1 border
+        w-full h-full min-h-0 box-border
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-950 focus-visible:z-20
         ${
           darkMode
@@ -176,14 +178,17 @@ export const ElementCell: React.FC<ElementCellProps> = ({
     >
       {/* Category or Trend accent top bar */}
       <div
-        className="absolute top-0 left-0 right-0 h-[2.5px] rounded-t-lg transition-opacity"
+        className="absolute top-0 left-0 right-0 h-[2.5px] rounded-t-lg transition-opacity pointer-events-none"
         style={{ backgroundColor: activeTrendColor || cat.color }}
       />
 
       {/* Row 1: atomic number (left) & state / favorite indicator (right) */}
-      <div className="flex items-center justify-between w-full h-[13px] leading-none shrink-0 px-0.5">
+      <div
+        style={{ gridRow: '1 / 2' }}
+        className="row-start-1 flex items-center justify-between w-full h-[13px] leading-none shrink-0 px-0.5 overflow-hidden"
+      >
         <span
-          className={`font-mono text-[clamp(8px,0.85vw,10.5px)] font-bold tracking-tight select-none ${
+          className={`font-mono text-[clamp(8px,0.85vw,10px)] font-bold tracking-tight select-none ${
             darkMode ? 'text-slate-300' : 'text-slate-700'
           }`}
         >
@@ -207,9 +212,12 @@ export const ElementCell: React.FC<ElementCellProps> = ({
       </div>
 
       {/* Row 2: Element Symbol (center) */}
-      <div className="flex items-center justify-center w-full h-full min-h-0 select-none">
+      <div
+        style={{ gridRow: '2 / 3' }}
+        className="row-start-2 flex items-center justify-center w-full min-h-[18px] select-none overflow-hidden my-auto"
+      >
         <span
-          className="text-[clamp(13px,1.35vw,17px)] font-extrabold tracking-tight leading-none"
+          className="text-[clamp(13px,1.3vw,17px)] font-extrabold tracking-tight leading-none text-center"
           style={{ color: darkMode ? '#ffffff' : '#0f172a' }}
         >
           {element.symbol}
@@ -217,10 +225,13 @@ export const ElementCell: React.FC<ElementCellProps> = ({
       </div>
 
       {/* Row 3: Element Name (readable, centered, wrapping up to 2 lines) */}
-      <div className="flex items-center justify-center w-full min-h-[11px] leading-[1.1] px-0.5">
+      <div
+        style={{ gridRow: '3 / 4' }}
+        className="row-start-3 flex items-center justify-center w-full min-h-[12px] px-0.5"
+      >
         {trendMode === 'none' ? (
           <span
-            className={`text-[clamp(7.5px,0.8vw,9.5px)] font-medium text-center w-full line-clamp-2 break-words ${
+            className={`text-[clamp(7.5px,0.75vw,9px)] font-medium text-center w-full line-clamp-2 leading-[1.1] break-words ${
               darkMode ? 'text-slate-200' : 'text-slate-700'
             }`}
             title={element.name}
@@ -229,7 +240,7 @@ export const ElementCell: React.FC<ElementCellProps> = ({
           </span>
         ) : (
           <span
-            className={`font-mono text-[clamp(7.5px,0.8vw,9.5px)] font-bold text-center w-full truncate ${
+            className={`font-mono text-[clamp(7.5px,0.75vw,9px)] font-bold text-center w-full truncate leading-tight ${
               isMissingTrendData
                 ? 'text-slate-500 italic'
                 : darkMode
@@ -244,10 +255,13 @@ export const ElementCell: React.FC<ElementCellProps> = ({
       </div>
 
       {/* Row 4: Dedicated Atomic Weight Row */}
-      <div className="flex items-center justify-center w-full h-[13px] leading-none px-0.5">
+      <div
+        style={{ gridRow: '4 / 5' }}
+        className="row-start-4 flex items-center justify-center w-full h-[12px] leading-none px-0.5 overflow-hidden"
+      >
         {trendMode === 'none' ? (
           <span
-            className={`font-mono text-[clamp(6.5px,0.72vw,8.5px)] text-center tracking-tight truncate w-full ${
+            className={`font-mono text-[clamp(6.5px,0.68vw,8px)] text-center tracking-tight truncate w-full ${
               darkMode ? 'text-slate-400' : 'text-slate-500'
             }`}
             title={`Atomic weight: ${element.atomicMass}`}
@@ -256,7 +270,7 @@ export const ElementCell: React.FC<ElementCellProps> = ({
           </span>
         ) : (
           <span
-            className={`text-[7px] font-medium text-center truncate w-full ${
+            className={`text-[clamp(6.5px,0.68vw,7.5px)] font-medium text-center truncate w-full ${
               darkMode ? 'text-slate-400' : 'text-slate-500'
             }`}
             title={element.name}
