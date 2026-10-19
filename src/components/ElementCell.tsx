@@ -103,8 +103,12 @@ export const ElementCell: React.FC<ElementCellProps> = ({
       style={{
         gridColumnStart: colStart,
         gridRowStart: rowStart,
-        gridTemplateRows: '13px minmax(18px, 1.4fr) minmax(12px, auto) 12px',
+        gridTemplateRows: '12px minmax(0, 1fr) auto 11px',
         rowGap: '1px',
+        padding: '4px 3px 5px',
+        boxSizing: 'border-box',
+        minWidth: 0,
+        minHeight: 0,
         borderColor: isSelected
           ? '#22d3ee'
           : isSearchMatch
@@ -137,8 +141,7 @@ export const ElementCell: React.FC<ElementCellProps> = ({
       onMouseLeave={onMouseLeave}
       className={`
         relative select-none cursor-pointer rounded-lg transition-transform duration-100 ease-out
-        grid items-center justify-items-center
-        px-1 py-1 sm:px-1.5 sm:py-1 border
+        grid items-center justify-items-center border
         w-full h-full min-h-0 box-border
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-950 focus-visible:z-20
         ${
@@ -185,10 +188,10 @@ export const ElementCell: React.FC<ElementCellProps> = ({
       {/* Row 1: atomic number (left) & state / favorite indicator (right) */}
       <div
         style={{ gridRow: '1 / 2' }}
-        className="row-start-1 flex items-center justify-between w-full h-[13px] leading-none shrink-0 px-0.5 overflow-hidden"
+        className="row-start-1 flex items-center justify-between w-full h-[12px] leading-none shrink-0 px-0.5 overflow-hidden"
       >
         <span
-          className={`font-mono text-[clamp(8px,0.85vw,10px)] font-bold tracking-tight select-none ${
+          className={`font-mono text-[clamp(8px,0.85vw,10px)] font-bold tracking-tight select-none leading-none ${
             darkMode ? 'text-slate-300' : 'text-slate-700'
           }`}
         >
@@ -214,10 +217,10 @@ export const ElementCell: React.FC<ElementCellProps> = ({
       {/* Row 2: Element Symbol (center) */}
       <div
         style={{ gridRow: '2 / 3' }}
-        className="row-start-2 flex items-center justify-center w-full min-h-[18px] select-none overflow-hidden my-auto"
+        className="row-start-2 flex items-center justify-center w-full min-h-0 select-none overflow-hidden my-auto"
       >
         <span
-          className="text-[clamp(13px,1.3vw,17px)] font-extrabold tracking-tight leading-none text-center"
+          className="text-[clamp(12px,1.25vw,16px)] font-extrabold tracking-tight leading-none text-center"
           style={{ color: darkMode ? '#ffffff' : '#0f172a' }}
         >
           {element.symbol}
@@ -227,11 +230,11 @@ export const ElementCell: React.FC<ElementCellProps> = ({
       {/* Row 3: Element Name (readable, centered, wrapping up to 2 lines) */}
       <div
         style={{ gridRow: '3 / 4' }}
-        className="row-start-3 flex items-center justify-center w-full min-h-[12px] px-0.5"
+        className="row-start-3 flex items-center justify-center w-full min-h-0 px-0.5 leading-[1.1]"
       >
         {trendMode === 'none' ? (
           <span
-            className={`text-[clamp(7.5px,0.75vw,9px)] font-medium text-center w-full line-clamp-2 leading-[1.1] break-words ${
+            className={`text-[clamp(7px,0.7vw,8.5px)] font-medium text-center w-full line-clamp-2 leading-[1.1] break-words ${
               darkMode ? 'text-slate-200' : 'text-slate-700'
             }`}
             title={element.name}
@@ -240,7 +243,7 @@ export const ElementCell: React.FC<ElementCellProps> = ({
           </span>
         ) : (
           <span
-            className={`font-mono text-[clamp(7.5px,0.75vw,9px)] font-bold text-center w-full truncate leading-tight ${
+            className={`font-mono text-[clamp(7px,0.7vw,8.5px)] font-bold text-center w-full truncate leading-tight ${
               isMissingTrendData
                 ? 'text-slate-500 italic'
                 : darkMode
@@ -256,23 +259,29 @@ export const ElementCell: React.FC<ElementCellProps> = ({
 
       {/* Row 4: Dedicated Atomic Weight Row */}
       <div
-        style={{ gridRow: '4 / 5' }}
-        className="row-start-4 flex items-center justify-center w-full h-[12px] leading-none px-0.5 overflow-hidden"
+        style={{
+          gridRow: '4 / 5',
+          alignSelf: 'end',
+          lineHeight: '11px',
+        }}
+        className="row-start-4 w-full m-0 p-0 text-center select-none"
       >
         {trendMode === 'none' ? (
           <span
-            className={`font-mono text-[clamp(6.5px,0.68vw,8px)] text-center tracking-tight truncate w-full ${
+            className={`font-mono text-[clamp(7px,0.68vw,8.5px)] text-center tracking-tight truncate block w-full leading-[11px] ${
               darkMode ? 'text-slate-400' : 'text-slate-500'
             }`}
+            style={{ whiteSpace: 'nowrap' }}
             title={`Atomic weight: ${element.atomicMass}`}
           >
             {element.atomicMass}
           </span>
         ) : (
           <span
-            className={`text-[clamp(6.5px,0.68vw,7.5px)] font-medium text-center truncate w-full ${
+            className={`text-[clamp(7px,0.68vw,8px)] font-medium text-center truncate block w-full leading-[11px] ${
               darkMode ? 'text-slate-400' : 'text-slate-500'
             }`}
+            style={{ whiteSpace: 'nowrap' }}
             title={element.name}
           >
             {element.name}
