@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { ELEMENTS_DATA, type ElementData, CATEGORIES } from './data/elements';
+import { ELEMENTS_DATA, type ElementData } from './data/elements';
 import { Header } from './components/Header';
 import { UnifiedControlBar } from './components/UnifiedControlBar';
 import { LegendBar } from './components/LegendBar';
@@ -9,7 +9,6 @@ import { ElementTooltip } from './components/ElementTooltip';
 import { CompareModal } from './components/CompareModal';
 import { QuizModal } from './components/QuizModal';
 import { ChemistryGuideModal } from './components/ChemistryGuideModal';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useFavorites } from './utils/useFavorites';
 import type { TrendType } from './data/trends';
 
@@ -56,6 +55,34 @@ export function App() {
       document.documentElement.classList.remove('dark');
     }
   }, [darkMode]);
+
+  // Check for ?element= query param on mount (e.g. from Open in New Tab or direct link)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const elementParam = params.get('element');
+    if (elementParam) {
+      const match = ELEMENTS_DATA.find(
+        (el) =>
+          el.symbol.toLowerCase() === elementParam.toLowerCase() ||
+          el.name.toLowerCase() === elementParam.toLowerCase() ||
+          String(el.number) === elementParam
+      );
+      if (match) {
+        setSelectedElement(match);
+      }
+    }
+  }, []);
+
+  // Close element detail modal on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selectedElement) {
+        setSelectedElement(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedElement]);
 
   // Handle Search match count calculation
   const searchMatchCount = useMemo(() => {
@@ -137,24 +164,6 @@ export function App() {
     setIsGuideOpen(true);
   };
 
-  const handleMobileStep = (direction: 'prev' | 'next') => {
-    if (!selectedElement) return;
-    const currentNum = selectedElement.number;
-    const nextIdx =
-      direction === 'prev'
-        ? currentNum > 1
-          ? currentNum - 2
-          : 117
-        : currentNum < 118
-        ? currentNum
-        : 0;
-    setSelectedElement(ELEMENTS_DATA[nextIdx]);
-  };
-
-  const mobileCat = selectedElement
-    ? CATEGORIES[selectedElement.category] || CATEGORIES['unknown']
-    : CATEGORIES['unknown'];
-
   return (
     <div
       className={`h-screen lg:h-[100dvh] flex flex-col overflow-y-auto lg:overflow-hidden font-sans transition-colors duration-200 select-none ${
@@ -204,9 +213,9 @@ export function App() {
           onResetAll={handleResetAll}
         />
 
-        {/* Workspace: Left = Periodic Table (+ Legend), Right = Selected Element Details Panel */}
-        <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3 overflow-hidden items-stretch w-full pb-16 lg:pb-0">
-          {/* LEFT SIDE: Core Periodic Table Matrix and Bottom Color Legend */}
+        {/* Workspace: Periodic Table (+ Legend) neatly fills the width without being squeezed */}
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden items-stretch w-full">
+          {/* Core Periodic Table Matrix and Bottom Color Legend */}
           <div className="flex-1 min-w-0 h-full flex flex-col justify-between overflow-hidden gap-1.5">
             <div className="flex-1 min-h-0 h-full w-full overflow-hidden flex flex-col">
               <PeriodicTable
@@ -243,79 +252,36 @@ export function App() {
               />
             )}
           </div>
-
-          {/* RIGHT SIDE: Dedicated Element Information Panel (appears only after clicking an element) */}
-          {selectedElement && (
-            <aside
-              id="element-detail-panel"
-              ref={detailPanelRef}
-              className="w-full lg:w-[340px] xl:w-[370px] 2xl:w-[400px] h-full flex flex-col min-h-0 shrink-0 animate-in fade-in slide-in-from-right-4 duration-200"
-            >
-              <ElementDetailPanel
-                element={selectedElement}
-                darkMode={darkMode}
-                temperatureKelvin={temperatureKelvin}
-                isFavorite={isFavorite(selectedElement.number)}
-                onToggleFavorite={toggleFavorite}
-                onSelectElement={(el) => setSelectedElement(el)}
-                onAddToCompare={handleAddToCompare}
-                onClose={() => setSelectedElement(null)}
-              />
-            </aside>
-          )}
         </div>
       </main>
 
-      {/* Mobile Floating Quick-Selection Dock (Visible only on mobile devices) */}
+      {/* Element Information Modal Dialog Overlay (opens cleanly on top of periodic table) */}
       {selectedElement && (
-        <div className="fixed bottom-3 left-3 right-3 z-30 lg:hidden p-2 rounded-2xl border shadow-2xl backdrop-blur-xl flex items-center justify-between gap-2 bg-slate-900/95 border-cyan-500/40 text-white animate-in slide-in-from-bottom-4 duration-200">
-          <div className="flex items-center gap-2 min-w-0">
-            <div
-              className="w-9 h-9 rounded-xl font-bold flex flex-col items-center justify-center shrink-0 border shadow-xs"
-              style={{
-                backgroundColor: `${mobileCat.color}25`,
-                borderColor: mobileCat.color,
-                color: mobileCat.color,
-              }}
-            >
-              <span className="text-[7.5px] opacity-75 font-mono">{selectedElement.number}</span>
-              <span className="text-xs font-black leading-none">{selectedElement.symbol}</span>
-            </div>
-
-            <div className="min-w-0 truncate">
-              <span className="text-xs font-bold block truncate leading-tight">{selectedElement.name}</span>
-              <span className="text-[9.5px] text-slate-400 block font-mono truncate">
-                {selectedElement.atomicMass} u • {selectedElement.categoryName}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              type="button"
-              onClick={() => handleMobileStep('prev')}
-              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300"
-              title="Previous element"
-            >
-              <ChevronLeft size={15} />
-            </button>
-            <button
-              type="button"
-              onClick={() => handleMobileStep('next')}
-              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300"
-              title="Next element"
-            >
-              <ChevronRight size={15} />
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                detailPanelRef.current?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="px-2.5 py-1 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-xs ml-1"
-            >
-              Details ↓
-            </button>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${selectedElement.name} details`}
+          className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-5 md:p-6 bg-slate-950/75 backdrop-blur-sm animate-in fade-in duration-150"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setSelectedElement(null);
+            }
+          }}
+        >
+          <div
+            ref={detailPanelRef}
+            className="w-full max-w-xl md:max-w-2xl lg:max-w-3xl h-[90vh] max-h-[820px] flex flex-col rounded-2xl shadow-2xl overflow-hidden border border-slate-700/80 animate-in zoom-in-95 duration-150 bg-slate-900"
+          >
+            <ElementDetailPanel
+              element={selectedElement}
+              darkMode={darkMode}
+              temperatureKelvin={temperatureKelvin}
+              isFavorite={isFavorite(selectedElement.number)}
+              onToggleFavorite={toggleFavorite}
+              onSelectElement={(el) => setSelectedElement(el)}
+              onAddToCompare={handleAddToCompare}
+              onClose={() => setSelectedElement(null)}
+            />
           </div>
         </div>
       )}

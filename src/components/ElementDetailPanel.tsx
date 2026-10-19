@@ -253,6 +253,20 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
             {copied ? <Check size={14} className="text-emerald-400" /> : <Share2 size={14} />}
           </button>
 
+          {/* Open in New Tab Button */}
+          <button
+            type="button"
+            onClick={() => {
+              const url = `${window.location.origin}${window.location.pathname}?element=${currentElement.symbol}`;
+              window.open(url, '_blank', 'noopener,noreferrer');
+            }}
+            title="Open element information in a new tab"
+            aria-label="Open in new tab"
+            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/5 text-slate-300 hover:text-white transition-colors"
+          >
+            <ExternalLink size={14} />
+          </button>
+
           {/* Close Panel Button */}
           {onClose && (
             <button
