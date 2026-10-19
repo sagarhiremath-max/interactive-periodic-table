@@ -282,12 +282,12 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
                   type="button"
                   onClick={() => onSelectCategory('lanthanide')}
                   style={{ gridColumnStart: 3, gridRowStart: 6 }}
-                  className="rounded-lg p-0.5 sm:p-1 border border-pink-500/40 bg-pink-950/20 hover:bg-pink-900/40 text-pink-300 flex flex-col items-center justify-center text-center transition-all cursor-pointer hover:scale-105 h-full min-h-0"
+                  className="rounded-lg p-1 border border-pink-500/40 bg-pink-950/20 hover:bg-pink-900/40 text-pink-300 flex flex-col items-center justify-between text-center transition-all cursor-pointer hover:scale-105 h-full min-h-0 select-none box-border"
                   title="Click to highlight Lanthanide series (57-71)"
                 >
-                  <span className="font-mono text-[8px] opacity-80 leading-none">57-71</span>
-                  <span className="font-bold text-[10px] sm:text-xs leading-tight">La-Lu</span>
-                  <span className="text-[7px] uppercase tracking-wider text-pink-400 font-semibold hidden sm:inline">
+                  <span className="font-mono text-[clamp(7.5px,0.8vw,9.5px)] font-bold opacity-80 leading-none">57–71</span>
+                  <span className="font-extrabold text-[clamp(11px,1.2vw,14px)] leading-none my-auto">La–Lu</span>
+                  <span className="text-[clamp(6.5px,0.7vw,8px)] uppercase tracking-wider text-pink-400 font-bold leading-none truncate w-full px-0.5">
                     Lanthanides
                   </span>
                 </button>
@@ -297,12 +297,12 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
                   type="button"
                   onClick={() => onSelectCategory('actinide')}
                   style={{ gridColumnStart: 3, gridRowStart: 7 }}
-                  className="rounded-lg p-0.5 sm:p-1 border border-rose-500/40 bg-rose-950/20 hover:bg-rose-900/40 text-rose-300 flex flex-col items-center justify-center text-center transition-all cursor-pointer hover:scale-105 h-full min-h-0"
+                  className="rounded-lg p-1 border border-rose-500/40 bg-rose-950/20 hover:bg-rose-900/40 text-rose-300 flex flex-col items-center justify-between text-center transition-all cursor-pointer hover:scale-105 h-full min-h-0 select-none box-border"
                   title="Click to highlight Actinide series (89-103)"
                 >
-                  <span className="font-mono text-[8px] opacity-80 leading-none">89-103</span>
-                  <span className="font-bold text-[10px] sm:text-xs leading-tight">Ac-Lr</span>
-                  <span className="text-[7px] uppercase tracking-wider text-rose-400 font-semibold hidden sm:inline">
+                  <span className="font-mono text-[clamp(7.5px,0.8vw,9.5px)] font-bold opacity-80 leading-none">89–103</span>
+                  <span className="font-extrabold text-[clamp(11px,1.2vw,14px)] leading-none my-auto">Ac–Lr</span>
+                  <span className="text-[clamp(6.5px,0.7vw,8px)] uppercase tracking-wider text-rose-400 font-bold leading-none truncate w-full px-0.5">
                     Actinides
                   </span>
                 </button>
