@@ -104,8 +104,8 @@ export const ElementCell: React.FC<ElementCellProps> = ({
         gridColumnStart: colStart,
         gridRowStart: rowStart,
         gridTemplateRows: '12px minmax(0, 1fr) auto 11px',
-        rowGap: '1px',
-        padding: '4px 3px 5px',
+        rowGap: '2px',
+        padding: '3px 3px 5px',
         boxSizing: 'border-box',
         minWidth: 0,
         minHeight: 0,
@@ -214,27 +214,27 @@ export const ElementCell: React.FC<ElementCellProps> = ({
         </div>
       </div>
 
-      {/* Row 2: Element Symbol (center) */}
+      {/* Row 2: Element Symbol / Short Name (center) */}
       <div
         style={{ gridRow: '2 / 3' }}
         className="row-start-2 flex items-center justify-center w-full min-h-0 select-none overflow-hidden my-auto"
       >
         <span
-          className="text-[clamp(12px,1.25vw,16px)] font-extrabold tracking-tight leading-none text-center"
+          className="text-[clamp(11.5px,1.2vw,15px)] font-extrabold tracking-tight leading-none text-center"
           style={{ color: darkMode ? '#ffffff' : '#0f172a' }}
         >
           {element.symbol}
         </span>
       </div>
 
-      {/* Row 3: Element Name (readable, centered, wrapping up to 2 lines) */}
+      {/* Row 3: Full Element Name (readable, centered, with clear gap from short name) */}
       <div
         style={{ gridRow: '3 / 4' }}
-        className="row-start-3 flex items-center justify-center w-full min-h-0 px-0.5 leading-[1.1]"
+        className="row-start-3 flex items-center justify-center w-full min-h-0 px-0.5 leading-[1.1] mt-[2px]"
       >
         {trendMode === 'none' ? (
           <span
-            className={`text-[clamp(7px,0.7vw,8.5px)] font-medium text-center w-full line-clamp-2 leading-[1.1] break-words ${
+            className={`text-[clamp(7px,0.68vw,8px)] font-medium text-center w-full line-clamp-2 leading-[1.1] break-words ${
               darkMode ? 'text-slate-200' : 'text-slate-700'
             }`}
             title={element.name}
@@ -243,7 +243,7 @@ export const ElementCell: React.FC<ElementCellProps> = ({
           </span>
         ) : (
           <span
-            className={`font-mono text-[clamp(7px,0.7vw,8.5px)] font-bold text-center w-full truncate leading-tight ${
+            className={`font-mono text-[clamp(7px,0.68vw,8px)] font-bold text-center w-full truncate leading-tight ${
               isMissingTrendData
                 ? 'text-slate-500 italic'
                 : darkMode
