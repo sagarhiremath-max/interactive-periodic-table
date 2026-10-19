@@ -68,6 +68,16 @@ export const ElementCell: React.FC<ElementCellProps> = ({
       if (trendValue !== null) {
         trendFormatted = `${trendValue} kJ`;
       }
+    } else if (trendMode === 'density') {
+      trendValue = element.density;
+      if (trendValue !== null) {
+        trendFormatted = `${trendValue.toFixed(2)} g/cm³`;
+      }
+    } else if (trendMode === 'meltingPoint') {
+      trendValue = element.meltingPointKelvin;
+      if (trendValue !== null) {
+        trendFormatted = `${Math.round(trendValue)} K`;
+      }
     }
 
     if (trendValue === null) {

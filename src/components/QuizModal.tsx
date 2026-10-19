@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Award, CheckCircle2, XCircle, RotateCcw, Flame, ArrowRight, Eye } from 'lucide-react';
+import { X, Award, CheckCircle2, XCircle, RotateCcw, Flame, ArrowRight, Eye, Lightbulb } from 'lucide-react';
 import { type ElementData, ELEMENTS_DATA } from '../data/elements';
 import { ATOMIC_RADII_PM } from '../data/trends';
 
@@ -10,12 +10,19 @@ interface QuizModalProps {
   onInspectElement: (element: ElementData) => void;
 }
 
+interface Option {
+  label: string;
+  isCorrect: boolean;
+  eliminated?: boolean;
+}
+
 interface Question {
   type: string;
   target: ElementData;
   questionText: string;
-  options: { label: string; isCorrect: boolean }[];
+  options: Option[];
   explanation: string;
+  hint: string;
 }
 
 export const QuizModal: React.FC<QuizModalProps> = ({
@@ -28,6 +35,8 @@ export const QuizModal: React.FC<QuizModalProps> = ({
   const [totalAnswered, setTotalAnswered] = useState(0);
   const [streak, setStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
+  const [hintsUsed, setHintsUsed] = useState(0);
+  const [showHint, setShowHint] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
@@ -44,12 +53,14 @@ export const QuizModal: React.FC<QuizModalProps> = ({
     let correctLabel = '';
     let distractors: string[] = [];
     let explanation = '';
+    let hint = '';
 
     if (qType === 'radius' && ATOMIC_RADII_PM[target.number] !== null) {
       const radius = ATOMIC_RADII_PM[target.number];
       questionText = `What is the approximate empirical atomic radius of ${target.name} (${target.symbol})?`;
       correctLabel = `${radius} pm`;
       explanation = `${target.name} (Z=${target.number}, Period ${target.period}) has an empirical atomic radius of ${radius} pm.`;
+      hint = `Hint: Elements in Period ${target.period} decrease in radius from left to right. ${target.name} has ${target.shells.length} electron shells.`;
       const deltas = [-40, -25, 30, 55];
       for (const d of deltas) {
         if (distractors.length < 3) {
@@ -64,6 +75,7 @@ export const QuizModal: React.FC<QuizModalProps> = ({
       questionText = `What is the chemical symbol for ${target.name}?`;
       correctLabel = target.symbol;
       explanation = `${target.name} has atomic number ${target.number} and is represented by the symbol "${target.symbol}".`;
+      hint = `Hint: ${target.name} is a ${target.categoryName.toLowerCase()} in Period ${target.period}, Group ${target.group}.`;
       while (distractors.length < 3) {
         const rElem = ELEMENTS_DATA[Math.floor(Math.random() * ELEMENTS_DATA.length)];
         if (rElem.symbol !== target.symbol && !distractors.includes(rElem.symbol)) {
@@ -74,6 +86,7 @@ export const QuizModal: React.FC<QuizModalProps> = ({
       questionText = `What is the atomic number of ${target.name} (${target.symbol})?`;
       correctLabel = `${target.number}`;
       explanation = `${target.name} has ${target.number} protons in its nucleus, placing it at position ${target.number} on the periodic table.`;
+      hint = `Hint: It has a relative atomic mass of ~${Math.round(target.atomicMassValue)} u and is in Period ${target.period}.`;
       while (distractors.length < 3) {
         const offset = (Math.floor(Math.random() * 9) - 4) || 1;
         const fakeNum = Math.max(1, Math.min(118, target.number + offset));
@@ -86,6 +99,7 @@ export const QuizModal: React.FC<QuizModalProps> = ({
       questionText = `Which chemical category does ${target.name} (${target.symbol}) belong to?`;
       correctLabel = target.categoryName;
       explanation = `${target.name} is classified as a ${target.categoryName.toLowerCase()} in Period ${target.period}, Group ${target.group}.`;
+      hint = `Hint: Look at Group ${target.group} and ${target.block.toUpperCase()}-block on the table.`;
       const allCategories = Array.from(new Set(ELEMENTS_DATA.map((e) => e.categoryName)));
       while (distractors.length < 3) {
         const rCat = allCategories[Math.floor(Math.random() * allCategories.length)];
@@ -94,10 +108,10 @@ export const QuizModal: React.FC<QuizModalProps> = ({
         }
       }
     } else if (qType === 'state') {
-      // Physical state
       questionText = `What is the standard physical state of ${target.name} (${target.symbol}) at room temperature (293 K / 20°C)?`;
       correctLabel = target.standardState.charAt(0).toUpperCase() + target.standardState.slice(1);
       explanation = `At room temperature, ${target.name} is a ${target.standardState}. (Melting point: ${target.meltingPointKelvin ? `${Math.round(target.meltingPointKelvin - 273.15)}°C` : 'N/A'}).`;
+      hint = `Hint: Its boiling point is ${target.boilingPointKelvin ? `${Math.round(target.boilingPointKelvin - 273.15)}°C` : 'extreme'}.`;
       const allStates = ['Solid', 'Liquid', 'Gas', 'Synthetic'];
       distractors = allStates.filter((s) => s.toLowerCase() !== target.standardState.toLowerCase()).slice(0, 3);
     } else if (qType === 'use' && target.commonUses && target.commonUses.length > 0) {
@@ -105,6 +119,7 @@ export const QuizModal: React.FC<QuizModalProps> = ({
       questionText = `Which element is commonly utilized for: "${use}"?`;
       correctLabel = `${target.name} (${target.symbol})`;
       explanation = `${target.name} is key in: ${target.commonUses.join(', ')}.`;
+      hint = `Hint: The chemical symbol for this element is "${target.symbol}".`;
       while (distractors.length < 3) {
         const rElem = ELEMENTS_DATA[Math.floor(Math.random() * ELEMENTS_DATA.length)];
         const distStr = `${rElem.name} (${rElem.symbol})`;
@@ -116,6 +131,7 @@ export const QuizModal: React.FC<QuizModalProps> = ({
       questionText = `Which element has the symbol "${target.symbol}" and atomic number ${target.number}?`;
       correctLabel = target.name;
       explanation = `Symbol "${target.symbol}" corresponds to ${target.name} (Atomic mass: ${target.atomicMass} u).`;
+      hint = `Hint: It has ${target.shells.length} electron shells and ${target.shells[target.shells.length - 1]} valence electrons.`;
       while (distractors.length < 3) {
         const rElem = ELEMENTS_DATA[Math.floor(Math.random() * ELEMENTS_DATA.length)];
         if (rElem.name !== target.name && !distractors.includes(rElem.name)) {
@@ -124,7 +140,7 @@ export const QuizModal: React.FC<QuizModalProps> = ({
       }
     }
 
-    const options = [
+    const options: Option[] = [
       { label: correctLabel, isCorrect: true },
       ...distractors.map((d) => ({ label: d, isCorrect: false })),
     ].sort(() => Math.random() - 0.5);
@@ -135,6 +151,7 @@ export const QuizModal: React.FC<QuizModalProps> = ({
       questionText,
       options,
       explanation,
+      hint,
     };
   }, []);
 
@@ -143,6 +160,7 @@ export const QuizModal: React.FC<QuizModalProps> = ({
       setCurrentQuestion(generateQuestion());
       setSelectedAnswer(null);
       setIsAnswered(false);
+      setShowHint(false);
     }
   }, [isOpen, generateQuestion]);
 
@@ -166,16 +184,39 @@ export const QuizModal: React.FC<QuizModalProps> = ({
     }
   };
 
+  const handleUseHint = () => {
+    if (showHint || isAnswered || !currentQuestion) return;
+    setShowHint(true);
+    setHintsUsed((prev) => prev + 1);
+
+    // Eliminate 1 incorrect option
+    const incorrectIndices = currentQuestion.options
+      .map((opt, i) => (!opt.isCorrect && !opt.eliminated ? i : -1))
+      .filter((i) => i !== -1);
+
+    if (incorrectIndices.length > 0) {
+      const eliminateIdx = incorrectIndices[Math.floor(Math.random() * incorrectIndices.length)];
+      setCurrentQuestion((prev) => {
+        if (!prev) return prev;
+        const newOpts = [...prev.options];
+        newOpts[eliminateIdx] = { ...newOpts[eliminateIdx], eliminated: true };
+        return { ...prev, options: newOpts };
+      });
+    }
+  };
+
   const handleNext = () => {
     setCurrentQuestion(generateQuestion());
     setSelectedAnswer(null);
     setIsAnswered(false);
+    setShowHint(false);
   };
 
   const handleResetQuiz = () => {
     setScore(0);
     setTotalAnswered(0);
     setStreak(0);
+    setHintsUsed(0);
     handleNext();
   };
 
@@ -209,7 +250,7 @@ export const QuizModal: React.FC<QuizModalProps> = ({
         </div>
 
         {/* Score & Streak Header */}
-        <div className="px-6 py-3 bg-slate-950/40 border-b border-white/10 flex items-center justify-between text-xs">
+        <div className="px-6 py-3 bg-slate-950/40 border-b border-white/10 flex items-center justify-between text-xs flex-wrap gap-2">
           <div className="flex items-center gap-4">
             <div>
               <span className="text-slate-400 block text-[10px]">Score</span>
@@ -227,31 +268,67 @@ export const QuizModal: React.FC<QuizModalProps> = ({
                 </strong>
               </div>
             </div>
+
+            {hintsUsed > 0 && (
+              <div className="hidden sm:block pl-3 border-l border-white/10 text-slate-400 text-[11px]">
+                Hints: <strong className="text-amber-300">{hintsUsed}</strong>
+              </div>
+            )}
           </div>
 
           <button
             type="button"
             onClick={handleResetQuiz}
             className="flex items-center gap-1 text-slate-400 hover:text-white text-xs p-1.5 rounded-lg hover:bg-white/5"
-            title="Reset Quiz Statistics"
+            title="Restart Quiz"
           >
             <RotateCcw size={13} />
-            <span>Reset Stats</span>
+            <span>Restart</span>
           </button>
         </div>
 
         {/* Question Area */}
-        <div className="p-6 space-y-5">
+        <div className="p-6 space-y-4">
           {currentQuestion && (
             <>
-              <div>
+              <div className="flex items-center justify-between">
                 <span className="text-[10px] uppercase font-bold tracking-widest text-cyan-400 px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20">
                   Question #{totalAnswered + 1}
                 </span>
-                <h3 className="text-base sm:text-lg font-bold mt-2 leading-snug">
-                  {currentQuestion.questionText}
-                </h3>
+
+                {/* Hint Button */}
+                {!isAnswered && (
+                  <button
+                    type="button"
+                    onClick={handleUseHint}
+                    disabled={showHint}
+                    className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border transition-all ${
+                      showHint
+                        ? 'bg-amber-400/20 border-amber-400/40 text-amber-300 cursor-default'
+                        : 'bg-white/5 hover:bg-white/10 border-white/10 text-amber-400 hover:text-amber-300 shadow-sm'
+                    }`}
+                  >
+                    <Lightbulb size={13} className={showHint ? 'fill-amber-400' : ''} />
+                    <span>{showHint ? 'Hint Revealed' : 'Get Hint (50/50)'}</span>
+                  </button>
+                )}
               </div>
+
+              <h3 className="text-base sm:text-lg font-bold leading-snug">
+                {currentQuestion.questionText}
+              </h3>
+
+              {/* Revealed Hint Box */}
+              {showHint && !isAnswered && (
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex items-start gap-2 animate-in fade-in duration-150">
+                  <Lightbulb size={15} className="shrink-0 mt-0.5 text-amber-400 fill-amber-400" />
+                  <div>
+                    <span className="font-bold text-amber-300 block mb-0.5">Helpful Chemistry Clue:</span>
+                    <p>{currentQuestion.hint}</p>
+                    <span className="text-[10px] text-amber-400/80 mt-1 block">One incorrect option has been removed!</span>
+                  </div>
+                </div>
+              )}
 
               {/* Options Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -260,7 +337,9 @@ export const QuizModal: React.FC<QuizModalProps> = ({
                     ? 'bg-slate-800/80 hover:bg-slate-700/80 border-slate-700 text-slate-200'
                     : 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-800';
 
-                  if (isAnswered) {
+                  if (opt.eliminated && !isAnswered) {
+                    btnStyle = 'opacity-25 pointer-events-none line-through border-slate-800 bg-slate-900';
+                  } else if (isAnswered) {
                     if (opt.isCorrect) {
                       btnStyle = 'bg-emerald-600/30 border-emerald-500 text-emerald-300 font-bold ring-1 ring-emerald-500';
                     } else if (selectedAnswer === idx) {
@@ -274,10 +353,10 @@ export const QuizModal: React.FC<QuizModalProps> = ({
                     <button
                       key={idx}
                       type="button"
-                      disabled={isAnswered}
+                      disabled={isAnswered || opt.eliminated}
                       onClick={() => handleSelectAnswer(idx)}
                       className={`p-3.5 rounded-xl border text-sm font-semibold text-left transition-all flex items-center justify-between ${btnStyle} ${
-                        !isAnswered ? 'hover:scale-[1.01]' : ''
+                        !isAnswered && !opt.eliminated ? 'hover:scale-[1.01]' : ''
                       }`}
                     >
                       <span>{opt.label}</span>

@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
-import { ELEMENTS_DATA, type ElementData } from './data/elements';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { ELEMENTS_DATA, type ElementData, CATEGORIES } from './data/elements';
 import { Header } from './components/Header';
 import { FilterBar } from './components/FilterBar';
 import { LegendBar } from './components/LegendBar';
@@ -10,7 +10,7 @@ import { ElementTooltip } from './components/ElementTooltip';
 import { TemperatureBar } from './components/TemperatureBar';
 import { CompareModal } from './components/CompareModal';
 import { QuizModal } from './components/QuizModal';
-import { Atom, Sparkles, Layers, TrendingUp } from 'lucide-react';
+import { Atom, Sparkles, Layers, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useFavorites } from './utils/useFavorites';
 import type { TrendType } from './data/trends';
 
@@ -44,6 +44,8 @@ export function App() {
   const [compareElement1, setCompareElement1] = useState<ElementData | null>(ELEMENTS_DATA[0]); // Hydrogen
   const [compareElement2, setCompareElement2] = useState<ElementData | null>(ELEMENTS_DATA[5]); // Carbon
   const [isQuizOpen, setIsQuizOpen] = useState(false);
+
+  const detailPanelRef = useRef<HTMLDivElement>(null);
 
   // Sync dark mode class on document element
   useEffect(() => {
@@ -122,6 +124,24 @@ export function App() {
     setIsCompareOpen(true);
   };
 
+  const handleMobileStep = (direction: 'prev' | 'next') => {
+    if (!selectedElement) return;
+    const currentNum = selectedElement.number;
+    const nextIdx =
+      direction === 'prev'
+        ? currentNum > 1
+          ? currentNum - 2
+          : 117
+        : currentNum < 118
+        ? currentNum
+        : 0;
+    setSelectedElement(ELEMENTS_DATA[nextIdx]);
+  };
+
+  const mobileCat = selectedElement
+    ? CATEGORIES[selectedElement.category] || CATEGORIES['unknown']
+    : CATEGORIES['unknown'];
+
   return (
     <div
       className={`min-h-screen flex flex-col font-sans transition-colors duration-200 ${
@@ -143,10 +163,11 @@ export function App() {
         onOpenCompare={() => setIsCompareOpen(true)}
         onResetAll={handleResetAll}
         hasActiveFiltersOrSearch={hasActiveFiltersOrSearch}
+        onSelectElement={(el) => setSelectedElement(el)}
       />
 
       {/* Main Content Workspace */}
-      <main className="flex-1 max-w-[1720px] w-full mx-auto px-3 sm:px-6 py-5 space-y-4">
+      <main className="flex-1 max-w-[1720px] w-full mx-auto px-3 sm:px-6 py-5 space-y-4 pb-20 lg:pb-5">
         {/* Top Control Panels: Classification & Block Filters */}
         <FilterBar
           activeClassification={activeClassification}
@@ -203,6 +224,7 @@ export function App() {
                 onSelectElement={(el) => setSelectedElement(el)}
                 onHoverElement={handleHoverElement}
                 onSelectCategory={handleCategorySelect}
+                onClearSearch={() => setSearchQuery('')}
               />
             </section>
 
@@ -220,7 +242,11 @@ export function App() {
           </div>
 
           {/* RIGHT SIDE: Dedicated Element Information Panel */}
-          <aside className="w-full lg:w-[350px] xl:w-[380px] 2xl:w-[410px] shrink-0 lg:sticky lg:top-20">
+          <aside
+            id="element-detail-panel"
+            ref={detailPanelRef}
+            className="w-full lg:w-[350px] xl:w-[380px] 2xl:w-[410px] shrink-0 lg:sticky lg:top-20"
+          >
             <ElementDetailPanel
               element={selectedElement}
               darkMode={darkMode}
@@ -256,7 +282,7 @@ export function App() {
                 <h3>Periodic Trends</h3>
               </div>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Explore atomic radii, electronegativities, and ionization energies in real time. Observe how increasing effective nuclear charge and electron shielding drive elemental periodicity.
+                Explore atomic radii, electronegativities, ionization energies, densities, and melting points in real time. Observe how effective nuclear charge and electron shielding drive elemental periodicity.
               </p>
             </div>
 
@@ -282,6 +308,60 @@ export function App() {
           </div>
         </section>
       </main>
+
+      {/* Mobile Floating Quick-Selection Dock (Visible only on mobile devices) */}
+      {selectedElement && (
+        <div className="fixed bottom-3 left-3 right-3 z-30 lg:hidden p-2.5 rounded-2xl border shadow-2xl backdrop-blur-xl flex items-center justify-between gap-2 bg-slate-900/95 border-cyan-500/40 text-white animate-in slide-in-from-bottom-4 duration-200">
+          <div className="flex items-center gap-2 min-w-0">
+            <div
+              className="w-10 h-10 rounded-xl font-bold flex flex-col items-center justify-center shrink-0 border shadow-sm"
+              style={{
+                backgroundColor: `${mobileCat.color}25`,
+                borderColor: mobileCat.color,
+                color: mobileCat.color,
+              }}
+            >
+              <span className="text-[8px] opacity-75 font-mono">{selectedElement.number}</span>
+              <span className="text-sm font-black leading-none">{selectedElement.symbol}</span>
+            </div>
+
+            <div className="min-w-0 truncate">
+              <span className="text-xs font-bold block truncate leading-tight">{selectedElement.name}</span>
+              <span className="text-[10px] text-slate-400 block font-mono truncate">
+                {selectedElement.atomicMass} u • {selectedElement.categoryName}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => handleMobileStep('prev')}
+              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300"
+              title="Previous element"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleMobileStep('next')}
+              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300"
+              title="Next element"
+            >
+              <ChevronRight size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                detailPanelRef.current?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="px-2.5 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-sm ml-1"
+            >
+              Details ↓
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Floating Hover Tooltip */}
       <ElementTooltip

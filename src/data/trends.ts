@@ -1,8 +1,8 @@
 // Periodic Trends Data and Scientific Color Utilities
 // Reliable IUPAC / Clementi / Slater empirical & covalent atomic radii (in picometers, pm)
-// Missing or synthetic elements where radius has not been measured are strictly null.
+// Missing or synthetic elements where values have not been measured are strictly null.
 
-export type TrendType = 'none' | 'atomicRadius' | 'electronegativity' | 'ionizationEnergy';
+export type TrendType = 'none' | 'atomicRadius' | 'electronegativity' | 'ionizationEnergy' | 'density' | 'meltingPoint';
 
 export interface TrendConfig {
   id: TrendType;
@@ -161,7 +161,7 @@ export const TREND_CONFIGS: Record<Exclude<TrendType, 'none'>, TrendConfig> = {
     description: 'A chemical property describing the tendency of an atom to attract shared electron pairs in chemical bonds.',
     periodTrend: 'Increases across a period (left to right)',
     groupTrend: 'Decreases down a group (top to bottom)',
-    explanation: 'Increases across periods as atoms become smaller and pull valence electrons more strongly. Decreases down groups due to increased atomic radius and shielding. Noble gases (He, Ne, Ar, etc.) generally lack Pauling electronegativities because they rarely form chemical bonds.',
+    explanation: 'Increases across periods as atoms become smaller and pull valence electrons more strongly. Decreases down groups due to increased atomic radius and shielding. Noble gases generally lack Pauling values because they rarely form bonds.',
     min: 0.79,
     max: 3.98,
   },
@@ -177,6 +177,30 @@ export const TREND_CONFIGS: Record<Exclude<TrendType, 'none'>, TrendConfig> = {
     min: 375,
     max: 2372,
   },
+  density: {
+    id: 'density',
+    name: 'Mass Density (STP)',
+    shortName: 'Density',
+    unit: 'g/cm³',
+    description: 'Mass per unit volume of the substance at standard temperature and pressure.',
+    periodTrend: 'Peaks near the center of transition metals (Group 8-10)',
+    groupTrend: 'Increases down most groups as atomic mass outpaces volume growth',
+    explanation: 'Density depends on atomic mass and crystal packing efficiency. Transition metals with partially filled d-orbitals pack tightly into dense lattices, peaking at Osmium (22.59 g/cm³) and Iridium (22.56 g/cm³).',
+    min: 0.089,
+    max: 22.59,
+  },
+  meltingPoint: {
+    id: 'meltingPoint',
+    name: 'Melting Point',
+    shortName: 'Melting Point',
+    unit: 'K',
+    description: 'Temperature at which solid and liquid phases coexist in thermodynamic equilibrium at 1 atm.',
+    periodTrend: 'Peaks in d-block transition metals (Group 6, e.g. W at 3695 K)',
+    groupTrend: 'Alkali metals decrease down groups; halogens increase down groups',
+    explanation: 'Melting points reflect the strength of metallic, covalent network, or van der Waals intermolecular bonds. Elements with maximal bonding electrons (like Tungsten and Carbon) have the highest melting points.',
+    min: 14,
+    max: 3695,
+  },
 };
 
 /**
@@ -189,12 +213,6 @@ export const TREND_CONFIGS: Record<Exclude<TrendType, 'none'>, TrendConfig> = {
  */
 export function getTrendColor(ratio: number): string {
   const clamped = Math.max(0, Math.min(1, ratio));
-
-  // Color stops
-  // 0.0 -> [2, 132, 199] (Sky-600)
-  // 0.33 -> [13, 148, 136] (Teal-600)
-  // 0.66 -> [217, 119, 6] (Amber-600)
-  // 1.0 -> [225, 29, 72] (Rose-600)
 
   let r: number, g: number, b: number;
   if (clamped < 0.33) {

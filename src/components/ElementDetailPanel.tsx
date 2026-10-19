@@ -19,6 +19,7 @@ import { type ElementData, CATEGORIES, ELEMENTS_DATA } from '../data/elements';
 import { BohrModel } from './BohrModel';
 import { formatTemp, kelvinToCelsius, getStateAtTemperature, getStateColor } from '../utils/helpers';
 import { ATOMIC_RADII_PM } from '../data/trends';
+import { ElectronShellDiagram } from './ElectronShellDiagram';
 
 interface ElementDetailPanelProps {
   element: ElementData | null;
@@ -320,7 +321,10 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
       </div>
 
       {/* Slide Content Area with Smooth Transitions */}
-      <div className="flex-1 overflow-y-auto p-4 relative min-h-[360px]">
+      <div
+        key={`${currentElement.number}-${activeSlide}`}
+        className="flex-1 overflow-y-auto p-4 relative min-h-[360px] animate-in fade-in duration-200"
+      >
         {/* SLIDE 0: OVERVIEW */}
         {activeSlide === 0 && (
           <div className="space-y-4 animate-in fade-in duration-150">
@@ -451,7 +455,7 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
           </div>
         )}
 
-        {/* SLIDE 1: BOHR MODEL */}
+        {/* SLIDE 1: BOHR MODEL & ELECTRON SHELL DIAGRAM */}
         {activeSlide === 1 && (
           <div className="space-y-4 animate-in fade-in duration-150 flex flex-col items-center">
             <div className="text-center w-full">
@@ -489,6 +493,17 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
                   {currentElement.shells[currentElement.shells.length - 1] || 0}
                 </strong>
               </div>
+            </div>
+
+            {/* Visual Electron Shell Capacity and Subshell Orbital Diagram */}
+            <div className="w-full pt-2 border-t border-white/10">
+              <ElectronShellDiagram
+                shells={currentElement.shells}
+                electronConfiguration={currentElement.electronConfiguration}
+                symbol={currentElement.symbol}
+                atomicNumber={currentElement.number}
+                darkMode={darkMode}
+              />
             </div>
 
             <div className="w-full flex items-center justify-between pt-1">

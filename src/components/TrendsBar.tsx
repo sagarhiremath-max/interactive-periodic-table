@@ -5,7 +5,7 @@ import {
   getTrendColor,
   ATOMIC_RADII_PM,
 } from '../data/trends';
-import { TrendingUp, HelpCircle, ChevronDown, ChevronUp, Layers, Zap, CircleDot } from 'lucide-react';
+import { TrendingUp, HelpCircle, ChevronDown, ChevronUp, Layers, Zap, CircleDot, Scale, Thermometer } from 'lucide-react';
 import type { ElementData } from '../data/elements';
 
 interface TrendsBarProps {
@@ -24,10 +24,12 @@ export const TrendsBar: React.FC<TrendsBarProps> = ({
   const [showExplanation, setShowExplanation] = useState(false);
 
   const trendButtons: { id: TrendType; label: string; icon: React.FC<{ size: number }> }[] = [
-    { id: 'none', label: 'Categories (Default)', icon: Layers },
+    { id: 'none', label: 'Categories', icon: Layers },
     { id: 'atomicRadius', label: 'Atomic Radius', icon: CircleDot },
     { id: 'electronegativity', label: 'Electronegativity', icon: TrendingUp },
     { id: 'ionizationEnergy', label: 'Ionization Energy', icon: Zap },
+    { id: 'density', label: 'Density', icon: Scale },
+    { id: 'meltingPoint', label: 'Melting Point', icon: Thermometer },
   ];
 
   // Calculate statistics for active trend
@@ -41,6 +43,8 @@ export const TrendsBar: React.FC<TrendsBarProps> = ({
       if (trendMode === 'atomicRadius') val = ATOMIC_RADII_PM[el.number] ?? null;
       else if (trendMode === 'electronegativity') val = el.electronegativity;
       else if (trendMode === 'ionizationEnergy') val = el.ionizationEnergy;
+      else if (trendMode === 'density') val = el.density;
+      else if (trendMode === 'meltingPoint') val = el.meltingPointKelvin;
 
       if (val !== null) measured++;
       else unmeasured++;
@@ -100,7 +104,7 @@ export const TrendsBar: React.FC<TrendsBarProps> = ({
               className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-semibold"
             >
               <HelpCircle size={14} />
-              <span>{showExplanation ? 'Hide Trend Explanation' : 'Why Does This Trend Occur?'}</span>
+              <span>{showExplanation ? 'Hide Explanation' : 'Why Does This Occur?'}</span>
               {showExplanation ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
           </div>

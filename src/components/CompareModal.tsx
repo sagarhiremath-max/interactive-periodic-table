@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, ArrowRightLeft, Scale } from 'lucide-react';
+import { X, ArrowRightLeft, Scale, BarChart2 } from 'lucide-react';
 import { type ElementData, ELEMENTS_DATA, CATEGORIES } from '../data/elements';
 import { formatTemp } from '../utils/helpers';
 import { ATOMIC_RADII_PM } from '../data/trends';
@@ -55,6 +55,45 @@ export const CompareModal: React.FC<CompareModalProps> = ({
     { label: 'Electron Configuration', v1: e1.electronConfigurationSemantic || e1.electronConfiguration, v2: e2.electronConfigurationSemantic || e2.electronConfiguration, mono: true },
     { label: 'Shell Distribution (e⁻)', v1: e1.shells.join(', '), v2: e2.shells.join(', '), mono: true },
     { label: 'Discovered By', v1: e1.discoveredBy, v2: e2.discoveredBy },
+  ];
+
+  // Visual bar comparison items
+  const visualMetrics = [
+    {
+      name: 'Atomic Weight (u)',
+      val1: e1.atomicMassValue,
+      val2: e2.atomicMassValue,
+      fmt1: `${e1.atomicMass} u`,
+      fmt2: `${e2.atomicMass} u`,
+    },
+    {
+      name: 'Atomic Radius (pm)',
+      val1: r1,
+      val2: r2,
+      fmt1: r1 ? `${r1} pm` : 'N/A',
+      fmt2: r2 ? `${r2} pm` : 'N/A',
+    },
+    {
+      name: 'Electronegativity (Pauling)',
+      val1: e1.electronegativity,
+      val2: e2.electronegativity,
+      fmt1: e1.electronegativity ? `${e1.electronegativity}` : 'N/A',
+      fmt2: e2.electronegativity ? `${e2.electronegativity}` : 'N/A',
+    },
+    {
+      name: 'Ionization Energy (kJ/mol)',
+      val1: e1.ionizationEnergy,
+      val2: e2.ionizationEnergy,
+      fmt1: e1.ionizationEnergy ? `${e1.ionizationEnergy} kJ/mol` : 'N/A',
+      fmt2: e2.ionizationEnergy ? `${e2.ionizationEnergy} kJ/mol` : 'N/A',
+    },
+    {
+      name: 'Density (g/cm³)',
+      val1: e1.density,
+      val2: e2.density,
+      fmt1: e1.density ? `${e1.density} g/cm³` : 'N/A',
+      fmt2: e2.density ? `${e2.density} g/cm³` : 'N/A',
+    },
   ];
 
   return (
@@ -170,52 +209,120 @@ export const CompareModal: React.FC<CompareModalProps> = ({
           </div>
         </div>
 
-        {/* Comparison Table */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-          <div className="overflow-hidden rounded-xl border border-white/10">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className={darkMode ? 'bg-slate-800/80 text-slate-300' : 'bg-slate-100 text-slate-700'}>
-                  <th className="p-3 font-semibold uppercase tracking-wider text-[10px] w-1/3">Property</th>
-                  <th className="p-3 font-semibold uppercase tracking-wider text-[10px] w-1/3">
-                    {e1.name} ({e1.symbol})
-                  </th>
-                  <th className="p-3 font-semibold uppercase tracking-wider text-[10px] w-1/3">
-                    {e2.name} ({e2.symbol})
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {rows.map((row, idx) => (
-                  <tr
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+          {/* Visual Bar Comparison Section */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+              <BarChart2 size={15} className="text-cyan-400" />
+              <span>Comparative Property Bars</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {visualMetrics.map((m, idx) => {
+                const maxVal = Math.max(m.val1 || 0, m.val2 || 0) || 1;
+                const p1 = m.val1 !== null ? Math.round(((m.val1 || 0) / maxVal) * 100) : 0;
+                const p2 = m.val2 !== null ? Math.round(((m.val2 || 0) / maxVal) * 100) : 0;
+
+                return (
+                  <div
                     key={idx}
-                    className={`transition-colors ${
-                      idx % 2 === 0
-                        ? darkMode
-                          ? 'bg-slate-900/40'
-                          : 'bg-white'
-                        : darkMode
-                        ? 'bg-slate-800/20'
-                        : 'bg-slate-50'
-                    } hover:bg-cyan-500/10`}
+                    className={`p-3 rounded-xl border ${
+                      darkMode ? 'bg-slate-950/40 border-slate-800' : 'bg-slate-50 border-slate-200'
+                    }`}
                   >
-                    <td className="p-3 text-slate-400 font-medium">{row.label}</td>
-                    <td
-                      className={`p-3 ${row.mono ? 'font-mono' : ''} ${row.capitalize ? 'capitalize' : ''}`}
-                      style={{ color: row.color1 }}
-                    >
-                      {row.v1}
-                    </td>
-                    <td
-                      className={`p-3 ${row.mono ? 'font-mono' : ''} ${row.capitalize ? 'capitalize' : ''}`}
-                      style={{ color: row.color2 }}
-                    >
-                      {row.v2}
-                    </td>
+                    <div className="text-[11px] font-bold text-slate-300 mb-2">{m.name}</div>
+
+                    {/* Element 1 Bar */}
+                    <div className="space-y-1 mb-2">
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="font-bold" style={{ color: cat1.color }}>{e1.symbol} ({e1.name}):</span>
+                        <span className="font-mono text-slate-300">{m.fmt1}</span>
+                      </div>
+                      <div className="w-full h-2 rounded-full bg-black/30 overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-300"
+                          style={{
+                            width: `${m.val1 !== null ? Math.max(4, p1) : 0}%`,
+                            backgroundColor: cat1.color,
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Element 2 Bar */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="font-bold" style={{ color: cat2.color }}>{e2.symbol} ({e2.name}):</span>
+                        <span className="font-mono text-slate-300">{m.fmt2}</span>
+                      </div>
+                      <div className="w-full h-2 rounded-full bg-black/30 overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-300"
+                          style={{
+                            width: `${m.val2 !== null ? Math.max(4, p2) : 0}%`,
+                            backgroundColor: cat2.color,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Detailed Property Table */}
+          <div className="space-y-2">
+            <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              Detailed Chemical & Physical Data
+            </div>
+
+            <div className="overflow-hidden rounded-xl border border-white/10">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className={darkMode ? 'bg-slate-800/80 text-slate-300' : 'bg-slate-100 text-slate-700'}>
+                    <th className="p-3 font-semibold uppercase tracking-wider text-[10px] w-1/3">Property</th>
+                    <th className="p-3 font-semibold uppercase tracking-wider text-[10px] w-1/3">
+                      {e1.name} ({e1.symbol})
+                    </th>
+                    <th className="p-3 font-semibold uppercase tracking-wider text-[10px] w-1/3">
+                      {e2.name} ({e2.symbol})
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {rows.map((row, idx) => (
+                    <tr
+                      key={idx}
+                      className={`transition-colors ${
+                        idx % 2 === 0
+                          ? darkMode
+                            ? 'bg-slate-900/40'
+                            : 'bg-white'
+                          : darkMode
+                          ? 'bg-slate-800/20'
+                          : 'bg-slate-50'
+                      } hover:bg-cyan-500/10`}
+                    >
+                      <td className="p-3 text-slate-400 font-medium">{row.label}</td>
+                      <td
+                        className={`p-3 ${row.mono ? 'font-mono' : ''} ${row.capitalize ? 'capitalize' : ''}`}
+                        style={{ color: row.color1 }}
+                      >
+                        {row.v1}
+                      </td>
+                      <td
+                        className={`p-3 ${row.mono ? 'font-mono' : ''} ${row.capitalize ? 'capitalize' : ''}`}
+                        style={{ color: row.color2 }}
+                      >
+                        {row.v2}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>

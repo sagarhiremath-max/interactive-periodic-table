@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import type { ElementData } from '../data/elements';
 import { ElementCell } from './ElementCell';
 import type { TrendType } from '../data/trends';
-import { ChevronsLeftRight } from 'lucide-react';
+import { ChevronsLeftRight, SearchX, RotateCcw } from 'lucide-react';
 
 interface PeriodicTableProps {
   elements: ElementData[];
@@ -22,6 +22,7 @@ interface PeriodicTableProps {
   onSelectElement: (element: ElementData) => void;
   onHoverElement: (element: ElementData | null, e?: React.MouseEvent<HTMLDivElement>) => void;
   onSelectCategory: (catId: string) => void;
+  onClearSearch?: () => void;
 }
 
 export const PeriodicTable: React.FC<PeriodicTableProps> = ({
@@ -42,6 +43,7 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
   onSelectElement,
   onHoverElement,
   onSelectCategory,
+  onClearSearch,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -94,6 +96,8 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
     return true;
   };
 
+  const matchingCount = elements.filter(isElementMatching).length;
+
   const hasAnyFilter =
     Boolean(cleanQuery) ||
     selectedCategory !== 'all' ||
@@ -145,6 +149,35 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
           <span>Scroll horizontally</span>
         </div>
       </div>
+
+      {/* Empty Search Results Message */}
+      {cleanQuery && matchingCount === 0 && (
+        <div
+          className={`my-3 p-5 rounded-2xl border text-center space-y-2.5 max-w-lg mx-auto ${
+            darkMode
+              ? 'bg-rose-950/20 border-rose-500/30 text-rose-200'
+              : 'bg-rose-50 border-rose-200 text-rose-900 shadow-sm'
+          }`}
+        >
+          <SearchX className="mx-auto text-rose-400" size={32} />
+          <h4 className="text-sm font-bold">
+            No chemical elements found matching &ldquo;{searchQuery}&rdquo;
+          </h4>
+          <p className="text-xs text-slate-300">
+            Suggestions: search by symbol (e.g. <strong>Fe</strong>, <strong>Au</strong>, <strong>U</strong>), atomic number (<strong>1–118</strong>), or element name.
+          </p>
+          {onClearSearch && (
+            <button
+              type="button"
+              onClick={onClearSearch}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 text-xs font-semibold transition-colors"
+            >
+              <RotateCcw size={13} />
+              <span>Clear Search Query</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Overflow scroll container */}
       <div
