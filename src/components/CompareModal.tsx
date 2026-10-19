@@ -121,11 +121,11 @@ export const CompareModal: React.FC<CompareModalProps> = ({
           </button>
         </div>
 
-        {/* Element Selectors & Swap */}
-        <div className="grid grid-cols-1 md:grid-cols-[1fr,auto,1fr] p-4 sm:p-6 gap-4 border-b border-white/10 bg-slate-950/40 shrink-0 items-center">
+        {/* Element Selectors & Swap - Always Side-by-Side */}
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center p-3 sm:p-5 gap-2 sm:gap-4 border-b border-white/10 bg-slate-950/40 shrink-0">
           {/* Element 1 Selector */}
-          <div>
-            <label className="text-xs text-slate-400 block mb-1 font-semibold uppercase">
+          <div className="min-w-0">
+            <label className="text-[10px] sm:text-xs text-slate-400 block mb-1 font-semibold uppercase tracking-wider truncate">
               Element 1
             </label>
             <select
@@ -134,7 +134,7 @@ export const CompareModal: React.FC<CompareModalProps> = ({
                 const found = ELEMENTS_DATA.find((el) => el.number === Number(e.target.value));
                 if (found) onSelectElement1(found);
               }}
-              className="w-full p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm font-medium focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+              className="w-full p-2 sm:p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs sm:text-sm font-medium focus:ring-2 focus:ring-cyan-500 focus:outline-none truncate"
             >
               {ELEMENTS_DATA.map((el) => (
                 <option key={el.number} value={el.number}>
@@ -143,16 +143,16 @@ export const CompareModal: React.FC<CompareModalProps> = ({
               ))}
             </select>
 
-            <div className="mt-3 flex items-center gap-3">
+            <div className="mt-2.5 flex items-center gap-2 sm:gap-3 min-w-0">
               <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-xl border shadow-sm"
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center font-bold text-lg sm:text-xl border shadow-sm shrink-0"
                 style={{ backgroundColor: `${cat1.color}25`, borderColor: cat1.color, color: cat1.color }}
               >
                 {e1.symbol}
               </div>
-              <div>
-                <h3 className="font-bold text-base leading-tight">{e1.name}</h3>
-                <span className="text-xs text-slate-400">
+              <div className="min-w-0 truncate">
+                <h3 className="font-bold text-sm sm:text-base leading-tight truncate">{e1.name}</h3>
+                <span className="text-[10.5px] sm:text-xs text-slate-400 block truncate">
                   {e1.categoryName} • P{e1.period} G{e1.group}
                 </span>
               </div>
@@ -160,21 +160,21 @@ export const CompareModal: React.FC<CompareModalProps> = ({
           </div>
 
           {/* Swap Button */}
-          <div className="flex justify-center my-1 md:my-0">
+          <div className="flex justify-center shrink-0 pt-4">
             <button
               type="button"
               onClick={handleSwap}
               title="Swap elements"
               aria-label="Swap elements"
-              className="p-2.5 rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/30 transition-all hover:scale-110"
+              className="p-2 sm:p-2.5 rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/30 transition-all hover:scale-110 shadow-xs"
             >
-              <ArrowRightLeft size={18} />
+              <ArrowRightLeft size={16} className="sm:w-[18px] sm:h-[18px]" />
             </button>
           </div>
 
           {/* Element 2 Selector */}
-          <div>
-            <label className="text-xs text-slate-400 block mb-1 font-semibold uppercase">
+          <div className="min-w-0">
+            <label className="text-[10px] sm:text-xs text-slate-400 block mb-1 font-semibold uppercase tracking-wider truncate">
               Element 2
             </label>
             <select
@@ -183,7 +183,7 @@ export const CompareModal: React.FC<CompareModalProps> = ({
                 const found = ELEMENTS_DATA.find((el) => el.number === Number(e.target.value));
                 if (found) onSelectElement2(found);
               }}
-              className="w-full p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm font-medium focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+              className="w-full p-2 sm:p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs sm:text-sm font-medium focus:ring-2 focus:ring-cyan-500 focus:outline-none truncate"
             >
               {ELEMENTS_DATA.map((el) => (
                 <option key={el.number} value={el.number}>
@@ -192,16 +192,16 @@ export const CompareModal: React.FC<CompareModalProps> = ({
               ))}
             </select>
 
-            <div className="mt-3 flex items-center gap-3">
+            <div className="mt-2.5 flex items-center gap-2 sm:gap-3 min-w-0">
               <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-xl border shadow-sm"
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center font-bold text-lg sm:text-xl border shadow-sm shrink-0"
                 style={{ backgroundColor: `${cat2.color}25`, borderColor: cat2.color, color: cat2.color }}
               >
                 {e2.symbol}
               </div>
-              <div>
-                <h3 className="font-bold text-base leading-tight">{e2.name}</h3>
-                <span className="text-xs text-slate-400">
+              <div className="min-w-0 truncate">
+                <h3 className="font-bold text-sm sm:text-base leading-tight truncate">{e2.name}</h3>
+                <span className="text-[10.5px] sm:text-xs text-slate-400 block truncate">
                   {e2.categoryName} • P{e2.period} G{e2.group}
                 </span>
               </div>
