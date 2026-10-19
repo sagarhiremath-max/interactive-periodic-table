@@ -11,15 +11,21 @@ import {
   ArrowRightLeft,
   Share2,
   Check,
+  Star,
+  GraduationCap,
+  AlertCircle,
 } from 'lucide-react';
 import { type ElementData, CATEGORIES, ELEMENTS_DATA } from '../data/elements';
 import { BohrModel } from './BohrModel';
 import { formatTemp, kelvinToCelsius, getStateAtTemperature, getStateColor } from '../utils/helpers';
+import { ATOMIC_RADII_PM } from '../data/trends';
 
 interface ElementDetailPanelProps {
   element: ElementData | null;
   darkMode: boolean;
   temperatureKelvin: number;
+  isFavorite?: boolean;
+  onToggleFavorite?: (atomicNumber: number) => void;
   onSelectElement: (element: ElementData) => void;
   onAddToCompare?: (element: ElementData) => void;
 }
@@ -28,6 +34,8 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
   element,
   darkMode,
   temperatureKelvin,
+  isFavorite = false,
+  onToggleFavorite,
   onSelectElement,
   onAddToCompare,
 }) => {
@@ -41,8 +49,8 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
   const slides = [
     { id: 0, title: 'Overview', icon: BookOpen },
     { id: 1, title: 'Bohr Model', icon: Atom },
-    { id: 2, title: 'Thermal', icon: Thermometer },
-    { id: 3, title: 'Uses & History', icon: Sparkles },
+    { id: 2, title: 'Thermal & State', icon: Thermometer },
+    { id: 3, title: 'Uses & Discovery', icon: Sparkles },
   ];
 
   // Reset to overview slide whenever the selected element changes
@@ -54,7 +62,7 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Only navigate if user is not typing in an input
-      if (document.activeElement?.tagName === 'INPUT') return;
+      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'SELECT') return;
 
       if (e.key === 'ArrowLeft') {
         const prevIdx = currentElement.number > 1 ? currentElement.number - 2 : ELEMENTS_DATA.length - 1;
@@ -76,8 +84,11 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
   const prevElement = currentElement.number > 1 ? ELEMENTS_DATA[currentElement.number - 2] : ELEMENTS_DATA[117];
   const nextElement = currentElement.number < 118 ? ELEMENTS_DATA[currentElement.number] : ELEMENTS_DATA[0];
 
+  const atomicRadius = ATOMIC_RADII_PM[currentElement.number];
+  const isSuperheavy = currentElement.number >= 104;
+
   const handleCopy = () => {
-    const text = `${currentElement.name} (${currentElement.symbol}) - Atomic No: ${currentElement.number}, Mass: ${currentElement.atomicMass} u, Category: ${currentElement.categoryName}`;
+    const text = `${currentElement.name} (${currentElement.symbol}) - Atomic No: ${currentElement.number}, Mass: ${currentElement.atomicMass} u, Category: ${currentElement.categoryName}, Group: ${currentElement.group}, Period: ${currentElement.period}`;
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -99,6 +110,41 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
     }
   };
 
+  // Generate concise educational insight based on chemical family
+  const getEducationalInsight = (): string => {
+    if (currentElement.number === 1) {
+      return 'Hydrogen is unique: with a single proton and electron, it can lose an electron (H⁺) like alkali metals or gain one (H⁻) like halogens. It makes up ~75% of the observable baryonic mass in the universe.';
+    }
+    if (currentElement.number === 6) {
+      return 'Carbon possesses exceptional catenation ability (forming stable C-C covalent bonds in linear, branched, and ring structures), serving as the chemical basis for all known organic chemistry and biological life.';
+    }
+    if (currentElement.category === 'alkali-metal') {
+      return `${currentElement.name} is an alkali metal with 1 valence electron (ns¹). It readily ionizes to form a +1 cation and reacts vigorously with water to produce hydrogen gas and a strongly basic alkaline hydroxide.`;
+    }
+    if (currentElement.category === 'alkaline-earth') {
+      return `${currentElement.name} has 2 valence electrons (ns²) and typically exhibits a +2 oxidation state, forming divalent ionic salts and basic oxides.`;
+    }
+    if (currentElement.category === 'noble-gas') {
+      return `${currentElement.name} possesses a completely filled valence electron shell, conferring extraordinary thermodynamic stability, low chemical reactivity, and an absence of standard electronegativity values.`;
+    }
+    if (currentElement.category === 'halogen') {
+      return `${currentElement.name} is a halogen with 7 valence electrons (ns² np⁵). It is highly electronegative and avidly gains 1 electron to achieve noble-gas configuration, forming halide salts (e.g., fluorides, chlorides).`;
+    }
+    if (currentElement.category === 'transition-metal') {
+      return `${currentElement.name} is a d-block transition metal exhibiting multiple oxidation states, colored coordinate complexes, and catalytic properties due to partially filled (n-1)d subshells.`;
+    }
+    if (currentElement.category === 'lanthanide') {
+      return `${currentElement.name} is a 4f-series lanthanide. Due to lanthanide contraction (poor 4f shielding), ionic radii decrease steadily across the series, resulting in uniquely similar chemical behavior.`;
+    }
+    if (currentElement.category === 'actinide') {
+      return `${currentElement.name} is an actinide element. All actinides are radioactive; the earlier members (Th, U) exist naturally in the Earth's crust, while transuranic members are synthesized artificially.`;
+    }
+    if (isSuperheavy) {
+      return `${currentElement.name} is a synthetic transactinide element synthesized via heavy-ion nuclear fusion. Relativistic electron effects strongly alter expected periodicity in group ${currentElement.group}.`;
+    }
+    return `${currentElement.name} is a ${currentElement.categoryName.toLowerCase()} in Period ${currentElement.period}, Group ${currentElement.group}, with ${currentElement.shells.length} electron shells and a standard atomic weight of ${currentElement.atomicMass} u.`;
+  };
+
   return (
     <div
       className={`
@@ -109,11 +155,11 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
             : 'bg-white border-slate-200 text-slate-900'
         }
       `}
-      style={{ minHeight: '520px' }}
+      style={{ minHeight: '540px' }}
     >
       {/* Header Banner with Category Accent Gradient */}
       <div
-        className="relative px-4 py-2.5 border-b flex items-center justify-between shrink-0"
+        className="relative px-4 py-3 border-b flex items-center justify-between shrink-0"
         style={{
           background: darkMode
             ? `linear-gradient(135deg, ${cat.color}25 0%, rgba(15,23,42,0.95) 100%)`
@@ -124,7 +170,7 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
         {/* Left: Atomic Symbol Box & Title */}
         <div className="flex items-center gap-2.5">
           <div
-            className="w-11 h-11 rounded-xl flex flex-col items-center justify-center font-bold shadow-md border relative overflow-hidden shrink-0"
+            className="w-12 h-12 rounded-xl flex flex-col items-center justify-center font-bold shadow-md border relative overflow-hidden shrink-0"
             style={{
               backgroundColor: `${cat.color}25`,
               borderColor: cat.color,
@@ -143,7 +189,7 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
             <div className="flex items-center gap-1.5 flex-wrap">
               <h2 className="text-base font-bold tracking-tight">{currentElement.name}</h2>
               <span
-                className="px-2 py-0.2 rounded-full text-[9px] font-semibold border"
+                className="px-2 py-0.5 rounded-full text-[9px] font-semibold border"
                 style={{
                   backgroundColor: `${cat.color}20`,
                   borderColor: `${cat.color}50`,
@@ -168,20 +214,43 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
 
         {/* Right Action buttons */}
         <div className="flex items-center gap-1.5">
+          {/* Favorite Toggle Button */}
+          {onToggleFavorite && (
+            <button
+              type="button"
+              onClick={() => onToggleFavorite(currentElement.number)}
+              title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+              aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+              className={`p-2 rounded-xl transition-colors border ${
+                isFavorite
+                  ? 'bg-amber-400/20 border-amber-400/40 text-amber-400'
+                  : 'bg-white/10 hover:bg-white/20 border-white/5 text-slate-300 hover:text-white'
+              }`}
+            >
+              <Star size={16} className={isFavorite ? 'fill-amber-400' : ''} />
+            </button>
+          )}
+
+          {/* Compare Button */}
           {onAddToCompare && (
             <button
+              type="button"
               onClick={() => onAddToCompare(currentElement)}
-              title="Compare this element"
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors"
+              title="Compare this element side-by-side"
+              aria-label="Compare this element"
+              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/5 text-slate-300 hover:text-white transition-colors"
             >
               <ArrowRightLeft size={16} />
             </button>
           )}
 
+          {/* Copy Button */}
           <button
+            type="button"
             onClick={handleCopy}
-            title="Copy element info"
-            className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors"
+            title="Copy element details to clipboard"
+            aria-label="Copy element details"
+            className="p-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/5 text-slate-300 hover:text-white transition-colors"
           >
             {copied ? <Check size={16} className="text-emerald-400" /> : <Share2 size={16} />}
           </button>
@@ -195,11 +264,12 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
         }`}
       >
         <button
+          type="button"
           onClick={() => onSelectElement(prevElement)}
           className="flex items-center gap-1 text-slate-400 hover:text-cyan-400 transition-colors font-medium"
           title={`Previous: #${prevElement.number} ${prevElement.name}`}
         >
-          <ChevronLeft size={16} />
+          <ChevronLeft size={15} />
           <span>#{prevElement.number} {prevElement.name}</span>
         </button>
 
@@ -208,30 +278,32 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
         </span>
 
         <button
+          type="button"
           onClick={() => onSelectElement(nextElement)}
           className="flex items-center gap-1 text-slate-400 hover:text-cyan-400 transition-colors font-medium"
           title={`Next: #${nextElement.number} ${nextElement.name}`}
         >
           <span>#{nextElement.number} {nextElement.name}</span>
-          <ChevronRight size={16} />
+          <ChevronRight size={15} />
         </button>
       </div>
 
-      {/* Slide-wise Navigation Tabs */}
+      {/* Slide Navigation Tabs */}
       <div
         className={`flex items-center justify-between px-4 border-b shrink-0 ${
           darkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-100/60 border-slate-200'
         }`}
       >
-        <div className="flex items-center gap-1 overflow-x-auto py-1 w-full justify-between">
+        <div className="flex items-center gap-1 overflow-x-auto py-1.5 w-full justify-between">
           {slides.map((s, idx) => {
             const Icon = s.icon;
             const isActive = activeSlide === idx;
             return (
               <button
                 key={s.id}
+                type="button"
                 onClick={() => goToSlide(idx)}
-                className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold transition-all whitespace-nowrap ${
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all whitespace-nowrap ${
                   isActive
                     ? 'bg-cyan-500 text-slate-950 shadow-sm font-bold'
                     : darkMode
@@ -248,39 +320,52 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
       </div>
 
       {/* Slide Content Area with Smooth Transitions */}
-      <div className="flex-1 overflow-y-auto p-3.5 relative min-h-[360px]">
+      <div className="flex-1 overflow-y-auto p-4 relative min-h-[360px]">
         {/* SLIDE 0: OVERVIEW */}
         {activeSlide === 0 && (
-          <div className="space-y-4 animate-in fade-in slide-in-from-right-3 duration-200">
+          <div className="space-y-4 animate-in fade-in duration-150">
+            {/* Educational Insight Highlight Box */}
+            <div
+              className={`p-3.5 rounded-xl border text-xs leading-relaxed ${
+                darkMode ? 'bg-cyan-950/20 border-cyan-500/30 text-cyan-200' : 'bg-cyan-50 border-cyan-200 text-cyan-950'
+              }`}
+            >
+              <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-[10px] text-cyan-400 mb-1">
+                <GraduationCap size={13} />
+                <span>Educational Chemistry Insight</span>
+              </div>
+              <p className="text-[11px]">{getEducationalInsight()}</p>
+            </div>
+
             {/* Chemical Summary */}
             <div
-              className={`p-4 rounded-2xl border text-xs leading-relaxed ${
+              className={`p-3.5 rounded-xl border text-xs leading-relaxed ${
                 darkMode ? 'bg-slate-800/40 border-slate-700/60 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'
               }`}
             >
-              <div className="flex items-center gap-1.5 text-cyan-400 font-bold uppercase tracking-wider text-[11px] mb-1.5">
-                <BookOpen size={14} />
-                <span>Chemical Summary</span>
+              <div className="flex items-center gap-1.5 text-slate-400 font-bold uppercase tracking-wider text-[10px] mb-1">
+                <BookOpen size={13} />
+                <span>IUPAC Chemical Summary</span>
               </div>
-              <p>{currentElement.summary}</p>
+              <p className="text-[11px]">{currentElement.summary}</p>
             </div>
 
             {/* Fundamental Properties Grid */}
             <div>
-              <h3 className="text-xs uppercase font-bold tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
-                <Layers size={14} />
+              <h3 className="text-[11px] uppercase font-bold tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
+                <Layers size={13} />
                 <span>Atomic & Physical Properties</span>
               </h3>
 
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className={`p-2.5 rounded-xl border ${darkMode ? 'bg-slate-800/30 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
                   <span className="text-[10px] text-slate-400 block">Atomic Number</span>
-                  <strong className="text-sm font-bold">{currentElement.number}</strong>
+                  <strong className="text-sm font-bold font-mono">{currentElement.number}</strong>
                 </div>
 
                 <div className={`p-2.5 rounded-xl border ${darkMode ? 'bg-slate-800/30 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
                   <span className="text-[10px] text-slate-400 block">Standard Atomic Mass</span>
-                  <strong className="text-sm font-bold">{currentElement.atomicMass} u</strong>
+                  <strong className="text-sm font-bold font-mono">{currentElement.atomicMass} u</strong>
                 </div>
 
                 <div className={`p-2.5 rounded-xl border ${darkMode ? 'bg-slate-800/30 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
@@ -294,23 +379,31 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
                 </div>
 
                 <div className={`p-2.5 rounded-xl border ${darkMode ? 'bg-slate-800/30 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-                  <span className="text-[10px] text-slate-400 block">Electronegativity (Pauling)</span>
-                  <strong className="text-sm font-bold">{currentElement.electronegativity ?? 'N/A'}</strong>
+                  <span className="text-[10px] text-slate-400 block">Atomic Radius</span>
+                  <strong className="text-sm font-bold font-mono">
+                    {atomicRadius ? `${atomicRadius} pm` : <span className="text-slate-500 font-normal">N/A</span>}
+                  </strong>
                 </div>
 
                 <div className={`p-2.5 rounded-xl border ${darkMode ? 'bg-slate-800/30 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-                  <span className="text-[10px] text-slate-400 block">Density</span>
-                  <strong className="text-sm font-bold">{currentElement.density ? `${currentElement.density} g/cm³` : 'N/A'}</strong>
+                  <span className="text-[10px] text-slate-400 block">Electronegativity (Pauling)</span>
+                  <strong className="text-sm font-bold font-mono">
+                    {currentElement.electronegativity ?? <span className="text-slate-500 font-normal">N/A</span>}
+                  </strong>
                 </div>
 
                 <div className={`p-2.5 rounded-xl border ${darkMode ? 'bg-slate-800/30 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
                   <span className="text-[10px] text-slate-400 block">1st Ionization Energy</span>
-                  <strong className="text-sm font-bold">{currentElement.ionizationEnergy ? `${currentElement.ionizationEnergy} kJ/mol` : 'N/A'}</strong>
+                  <strong className="text-sm font-bold font-mono">
+                    {currentElement.ionizationEnergy ? `${currentElement.ionizationEnergy} kJ/mol` : <span className="text-slate-500 font-normal">N/A</span>}
+                  </strong>
                 </div>
 
                 <div className={`p-2.5 rounded-xl border ${darkMode ? 'bg-slate-800/30 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-                  <span className="text-[10px] text-slate-400 block">Standard State (STP)</span>
-                  <strong className="text-sm capitalize font-bold">{currentElement.standardState}</strong>
+                  <span className="text-[10px] text-slate-400 block">Density (at STP)</span>
+                  <strong className="text-sm font-bold font-mono">
+                    {currentElement.density ? `${currentElement.density} g/cm³` : <span className="text-slate-500 font-normal">N/A</span>}
+                  </strong>
                 </div>
               </div>
             </div>
@@ -334,9 +427,20 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
               </div>
             </div>
 
+            {/* Superheavy warning note if element 104+ */}
+            {isSuperheavy && (
+              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] flex items-start gap-2">
+                <AlertCircle size={14} className="shrink-0 mt-0.5 text-amber-400" />
+                <span>
+                  Synthetic superheavy radionuclide. Produced in particle accelerators; half-life is typically under a few minutes. Bulk physical constants have not been measured experimentally.
+                </span>
+              </div>
+            )}
+
             {/* Slide forward prompt */}
             <div className="pt-1 flex justify-end">
               <button
+                type="button"
                 onClick={nextSlide}
                 className="px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 text-xs font-semibold flex items-center gap-1.5 transition-colors"
               >
@@ -349,13 +453,13 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
 
         {/* SLIDE 1: BOHR MODEL */}
         {activeSlide === 1 && (
-          <div className="space-y-4 animate-in fade-in slide-in-from-right-3 duration-200 flex flex-col items-center">
+          <div className="space-y-4 animate-in fade-in duration-150 flex flex-col items-center">
             <div className="text-center w-full">
               <h3 className="text-sm font-bold text-slate-200 mb-0.5">
-                Bohr Orbital Atomic Model
+                Bohr Atomic Model: {currentElement.name}
               </h3>
               <p className="text-xs text-slate-400">
-                Concentric electron shells with orbiting electrons.
+                Concentric electron shells showing distributed orbiting electrons.
               </p>
             </div>
 
@@ -369,7 +473,7 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
                 symbol={currentElement.symbol}
                 atomicNumber={currentElement.number}
                 categoryColor={cat.color}
-                size={195}
+                size={200}
               />
             </div>
 
@@ -389,6 +493,7 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
 
             <div className="w-full flex items-center justify-between pt-1">
               <button
+                type="button"
                 onClick={prevSlide}
                 className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 text-xs font-semibold flex items-center gap-1 transition-colors"
               >
@@ -396,27 +501,28 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
                 <span>Overview</span>
               </button>
               <button
+                type="button"
                 onClick={nextSlide}
                 className="px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 text-xs font-semibold flex items-center gap-1 transition-colors"
               >
-                <span>Thermal Phase</span>
+                <span>Thermal & State</span>
                 <ChevronRight size={14} />
               </button>
             </div>
           </div>
         )}
 
-        {/* SLIDE 2: THERMAL */}
+        {/* SLIDE 2: THERMAL & STATE */}
         {activeSlide === 2 && (
-          <div className="space-y-4 animate-in fade-in slide-in-from-right-3 duration-200">
+          <div className="space-y-4 animate-in fade-in duration-150">
             {/* Unit Switcher */}
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                  Phase Transition Points
+                  Thermal Phase Points
                 </h3>
                 <span className="text-xs text-slate-400">
-                  Simulated: <strong className="text-cyan-400">{Math.round(temperatureKelvin)} K</strong>
+                  Simulation: <strong className="text-cyan-400">{Math.round(temperatureKelvin)} K</strong>
                 </span>
               </div>
 
@@ -424,6 +530,7 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
                 {(['C', 'K', 'F'] as const).map((unit) => (
                   <button
                     key={unit}
+                    type="button"
                     onClick={() => setTempUnit(unit)}
                     className={`px-2 py-0.5 rounded font-bold text-[11px] transition-colors ${
                       tempUnit === unit ? 'bg-cyan-500 text-slate-950' : 'text-slate-400 hover:text-white'
@@ -442,7 +549,11 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
                   Melting Point
                 </span>
                 <div className="text-base font-bold font-mono">
-                  {formatTemp(currentElement.meltingPointKelvin, tempUnit)}
+                  {currentElement.meltingPointKelvin !== null ? (
+                    formatTemp(currentElement.meltingPointKelvin, tempUnit)
+                  ) : (
+                    <span className="text-slate-500 text-xs font-normal">Unmeasured</span>
+                  )}
                 </div>
                 {currentElement.meltingPointKelvin && (
                   <span className="text-[10px] text-slate-400 font-mono block mt-1">
@@ -456,7 +567,11 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
                   Boiling Point
                 </span>
                 <div className="text-base font-bold font-mono">
-                  {formatTemp(currentElement.boilingPointKelvin, tempUnit)}
+                  {currentElement.boilingPointKelvin !== null ? (
+                    formatTemp(currentElement.boilingPointKelvin, tempUnit)
+                  ) : (
+                    <span className="text-slate-500 text-xs font-normal">Unmeasured</span>
+                  )}
                 </div>
                 {currentElement.boilingPointKelvin && (
                   <span className="text-[10px] text-slate-400 font-mono block mt-1">
@@ -479,17 +594,18 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
               </div>
               <p className="text-[11px] text-slate-400">
                 {currentState === 'solid'
-                  ? `${currentElement.name} is in solid crystalline or metallic state below its melting point.`
+                  ? `${currentElement.name} exists in a solid metallic or crystalline lattice structure below its melting point.`
                   : currentState === 'liquid'
                   ? `${currentElement.name} is molten liquid between its melting and boiling points.`
                   : currentState === 'gas'
-                  ? `${currentElement.name} is vaporized into gaseous form above its boiling point.`
-                  : 'Radioactive synthetic element with extremely short half-life.'}
+                  ? `${currentElement.name} is in vaporized gaseous form with free atoms or molecules.`
+                  : 'Synthetic radioactive element; standard macroscopic phase properties have not been experimentally measured.'}
               </p>
             </div>
 
             <div className="w-full flex items-center justify-between pt-1">
               <button
+                type="button"
                 onClick={prevSlide}
                 className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 text-xs font-semibold flex items-center gap-1 transition-colors"
               >
@@ -497,23 +613,24 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
                 <span>Bohr Model</span>
               </button>
               <button
+                type="button"
                 onClick={nextSlide}
                 className="px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 text-xs font-semibold flex items-center gap-1 transition-colors"
               >
-                <span>Uses & History</span>
+                <span>Uses & Discovery</span>
                 <ChevronRight size={14} />
               </button>
             </div>
           </div>
         )}
 
-        {/* SLIDE 3: USES & HISTORY */}
+        {/* SLIDE 3: USES & DISCOVERY */}
         {activeSlide === 3 && (
-          <div className="space-y-4 animate-in fade-in slide-in-from-right-3 duration-200">
+          <div className="space-y-4 animate-in fade-in duration-150">
             {/* Discovery Info */}
             <div className={`p-3.5 rounded-xl border ${darkMode ? 'bg-slate-800/30 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
               <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400 block mb-1">
-                Discovery & Origin
+                Discovery & History
               </span>
               <p className="text-xs font-medium text-slate-200">{currentElement.discoveredBy}</p>
               <div className="mt-1.5 text-[11px] text-slate-400">
@@ -525,23 +642,29 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
                 <Sparkles size={14} className="text-amber-400" />
-                <span>Real-World Common Uses</span>
+                <span>Practical Applications</span>
               </h3>
 
               <div className="space-y-2">
-                {currentElement.commonUses.map((use, idx) => (
-                  <div
-                    key={idx}
-                    className={`p-2.5 rounded-xl border flex items-start gap-2.5 text-xs ${
-                      darkMode ? 'bg-slate-800/40 border-slate-700/60' : 'bg-slate-50 border-slate-200'
-                    }`}
-                  >
-                    <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 font-bold text-[11px] flex items-center justify-center shrink-0">
-                      {idx + 1}
-                    </span>
-                    <span className="font-medium text-slate-200 leading-relaxed">{use}</span>
-                  </div>
-                ))}
+                {currentElement.commonUses && currentElement.commonUses.length > 0 ? (
+                  currentElement.commonUses.map((use, idx) => (
+                    <div
+                      key={idx}
+                      className={`p-2.5 rounded-xl border flex items-start gap-2.5 text-xs ${
+                        darkMode ? 'bg-slate-800/40 border-slate-700/60' : 'bg-slate-50 border-slate-200'
+                      }`}
+                    >
+                      <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 font-bold text-[11px] flex items-center justify-center shrink-0">
+                        {idx + 1}
+                      </span>
+                      <span className="font-medium text-slate-200 leading-relaxed">{use}</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-slate-400 italic">
+                    Currently limited strictly to scientific research in nuclear physics and synthesis of heavier nuclei.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -553,18 +676,19 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 hover:underline"
               >
-                <span>Read encyclopedic article on Wikipedia</span>
+                <span>Read detailed peer-reviewed IUPAC page on Wikipedia</span>
                 <ExternalLink size={12} />
               </a>
             </div>
 
             <div className="w-full flex items-center justify-start pt-1">
               <button
+                type="button"
                 onClick={prevSlide}
                 className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 text-xs font-semibold flex items-center gap-1 transition-colors"
               >
                 <ChevronLeft size={14} />
-                <span>Thermal Phase</span>
+                <span>Thermal & State</span>
               </button>
             </div>
           </div>
@@ -581,6 +705,7 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
           {slides.map((s, idx) => (
             <button
               key={s.id}
+              type="button"
               onClick={() => goToSlide(idx)}
               className={`h-1.5 rounded-full transition-all ${
                 activeSlide === idx ? 'w-6 bg-cyan-400' : 'w-1.5 bg-slate-600 hover:bg-slate-400'

@@ -1,6 +1,8 @@
 import React, { useRef } from 'react';
 import type { ElementData } from '../data/elements';
 import { ElementCell } from './ElementCell';
+import type { TrendType } from '../data/trends';
+import { ChevronsLeftRight } from 'lucide-react';
 
 interface PeriodicTableProps {
   elements: ElementData[];
@@ -14,6 +16,9 @@ interface PeriodicTableProps {
   layoutMode: 'standard' | 'extended';
   temperatureKelvin: number;
   darkMode: boolean;
+  trendMode?: TrendType;
+  onlyFavorites?: boolean;
+  isFavorite: (num: number) => boolean;
   onSelectElement: (element: ElementData) => void;
   onHoverElement: (element: ElementData | null, e?: React.MouseEvent<HTMLDivElement>) => void;
   onSelectCategory: (catId: string) => void;
@@ -31,6 +36,9 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
   layoutMode,
   temperatureKelvin,
   darkMode,
+  trendMode = 'none',
+  onlyFavorites = false,
+  isFavorite,
   onSelectElement,
   onHoverElement,
   onSelectCategory,
@@ -41,7 +49,12 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
 
   // Helper to determine whether an element matches current active filters
   const isElementMatching = (el: ElementData): boolean => {
-    // 1. Search Query
+    // 1. Only Favorites filter
+    if (onlyFavorites && !isFavorite(el.number)) {
+      return false;
+    }
+
+    // 2. Search Query (name, symbol, or atomic number)
     if (cleanQuery) {
       const matchName = el.name.toLowerCase().includes(cleanQuery);
       const matchSymbol = el.symbol.toLowerCase() === cleanQuery || el.symbol.toLowerCase().startsWith(cleanQuery);
@@ -49,7 +62,7 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
       if (!matchName && !matchSymbol && !matchNum) return false;
     }
 
-    // 2. Category selection
+    // 3. Category selection
     if (selectedCategory !== 'all') {
       if (selectedCategory === 'metals' && !el.isMetal) return false;
       if (selectedCategory === 'nonmetals' && !el.isNonmetal) return false;
@@ -63,17 +76,17 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
       }
     }
 
-    // 3. Block selection
+    // 4. Block selection
     if (selectedBlock !== 'all' && el.block !== selectedBlock) {
       return false;
     }
 
-    // 4. State filter
+    // 5. State filter
     if (selectedStateFilter !== 'all' && el.standardState !== selectedStateFilter) {
       return false;
     }
 
-    // 5. Legend hover
+    // 6. Legend hover
     if (hoveredCategory && el.category !== hoveredCategory) {
       return false;
     }
@@ -86,6 +99,7 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
     selectedCategory !== 'all' ||
     selectedBlock !== 'all' ||
     selectedStateFilter !== 'all' ||
+    onlyFavorites ||
     Boolean(hoveredCategory);
 
   const groupLabelsStandard = [
@@ -115,24 +129,34 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
     <div className="relative w-full flex flex-col">
       {/* Top info bar */}
       <div className="flex items-center justify-between pb-2 px-1 text-xs text-slate-400">
-        <div className="flex items-center gap-2">
-          <span>Layout: <strong className="text-white capitalize">{layoutMode}</strong></span>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span>
+            Layout: <strong className="text-white capitalize">{layoutMode}</strong>
+          </span>
           <span>•</span>
           <span className="hidden sm:inline">
-            Hover element for preview, click for full Bohr model & physics
+            Click any element for Bohr model, properties & applications
           </span>
+        </div>
+
+        {/* Mobile scroll hint */}
+        <div className="flex items-center gap-1 text-[11px] text-cyan-400 lg:hidden animate-pulse">
+          <ChevronsLeftRight size={13} />
+          <span>Scroll horizontally</span>
         </div>
       </div>
 
       {/* Overflow scroll container */}
       <div
         ref={containerRef}
-        className="w-full overflow-x-auto pb-4 pt-1 rounded-2xl transition-all"
+        className="w-full overflow-x-auto pb-4 pt-1 rounded-2xl transition-all border border-transparent focus-within:border-cyan-500/30"
         style={{ scrollbarWidth: 'thin' }}
+        tabIndex={0}
+        aria-label="Interactive periodic table of elements grid"
       >
         <div
           style={{
-            minWidth: layoutMode === 'extended' ? '1400px' : '760px',
+            minWidth: layoutMode === 'extended' ? '1420px' : '780px',
             transition: 'transform 0.15s ease-out',
           }}
           className="pb-2"
@@ -146,7 +170,7 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
               gridTemplateColumns:
                 layoutMode === 'extended'
                   ? 'repeat(32, minmax(40px, 1fr))'
-                  : 'repeat(18, minmax(38px, 1fr))',
+                  : 'repeat(18, minmax(39px, 1fr))',
               gridTemplateRows:
                 layoutMode === 'extended'
                   ? 'repeat(7, auto)'
@@ -173,6 +197,7 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
                   key={`p-${p}`}
                   style={{ gridColumnStart: 1, gridRowStart: p }}
                   className="absolute -left-5 top-0 bottom-0 flex items-center justify-center text-xs font-mono font-bold text-slate-500 pointer-events-none"
+                  aria-hidden="true"
                 >
                   {p}
                 </div>
@@ -194,9 +219,11 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
                   isHovered={isHovered}
                   isDimmed={isDimmed}
                   isSearchMatch={isSearchMatch}
+                  isFavorite={isFavorite(el.number)}
                   layoutMode={layoutMode}
                   temperatureKelvin={temperatureKelvin}
                   darkMode={darkMode}
+                  trendMode={trendMode}
                   onClick={onSelectElement}
                   onMouseEnter={(element, e) => onHoverElement(element, e)}
                   onMouseLeave={() => onHoverElement(null)}
@@ -209,10 +236,11 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
               <>
                 {/* Lanthanides placeholder: Row 6, Col 3 */}
                 <button
+                  type="button"
                   onClick={() => onSelectCategory('lanthanide')}
                   style={{ gridColumnStart: 3, gridRowStart: 6 }}
                   className="rounded-lg p-1.5 border border-pink-500/40 bg-pink-950/20 hover:bg-pink-900/40 text-pink-300 flex flex-col items-center justify-center text-center transition-all cursor-pointer hover:scale-105"
-                  title="Click to view Lanthanide series (57-71)"
+                  title="Click to highlight Lanthanide series (57-71)"
                 >
                   <span className="font-mono text-[9px] opacity-80">57-71</span>
                   <span className="font-bold text-xs">La-Lu</span>
@@ -223,10 +251,11 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
 
                 {/* Actinides placeholder: Row 7, Col 3 */}
                 <button
+                  type="button"
                   onClick={() => onSelectCategory('actinide')}
                   style={{ gridColumnStart: 3, gridRowStart: 7 }}
                   className="rounded-lg p-1.5 border border-rose-500/40 bg-rose-950/20 hover:bg-rose-900/40 text-rose-300 flex flex-col items-center justify-center text-center transition-all cursor-pointer hover:scale-105"
-                  title="Click to view Actinide series (89-103)"
+                  title="Click to highlight Actinide series (89-103)"
                 >
                   <span className="font-mono text-[9px] opacity-80">89-103</span>
                   <span className="font-bold text-xs">Ac-Lr</span>

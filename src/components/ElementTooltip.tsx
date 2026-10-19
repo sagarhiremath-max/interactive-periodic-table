@@ -1,6 +1,7 @@
 import React from 'react';
 import { type ElementData, CATEGORIES } from '../data/elements';
 import { getStateAtTemperature, getStateColor, formatTemp } from '../utils/helpers';
+import { ATOMIC_RADII_PM } from '../data/trends';
 
 interface ElementTooltipProps {
   element: ElementData | null;
@@ -20,10 +21,11 @@ export const ElementTooltip: React.FC<ElementTooltipProps> = ({
   const cat = CATEGORIES[element.category] || CATEGORIES['unknown'];
   const currentState = getStateAtTemperature(element, temperatureKelvin);
   const stateColor = getStateColor(currentState);
+  const atomicRadius = ATOMIC_RADII_PM[element.number];
 
   // Position tooltip safely within viewport
-  const tooltipWidth = 260;
-  const tooltipHeight = 180;
+  const tooltipWidth = 270;
+  const tooltipHeight = 190;
   const padding = 16;
 
   let left = position.x + 16;
@@ -49,7 +51,7 @@ export const ElementTooltip: React.FC<ElementTooltipProps> = ({
         position: 'fixed',
       }}
       className={`
-        pointer-events-none z-50 w-64 rounded-xl p-3 shadow-2xl backdrop-blur-md border transition-opacity duration-150 animate-in fade-in zoom-in-95
+        pointer-events-none z-50 w-[270px] rounded-xl p-3 shadow-2xl backdrop-blur-md border transition-opacity duration-150 animate-in fade-in zoom-in-95
         ${
           darkMode
             ? 'bg-slate-900/95 border-slate-700/80 text-white shadow-black/60'
@@ -114,16 +116,16 @@ export const ElementTooltip: React.FC<ElementTooltipProps> = ({
         </div>
 
         <div>
-          <span className="text-slate-400 block text-[10px]">Configuration</span>
-          <span className="font-mono text-[10px] truncate block text-slate-300">
-            {element.electronConfigurationSemantic || element.electronConfiguration}
+          <span className="text-slate-400 block text-[10px]">Period / Group</span>
+          <span className="font-medium text-[11px]">
+            P{element.period} · G{element.group} ({element.block.toUpperCase()})
           </span>
         </div>
 
         <div>
-          <span className="text-slate-400 block text-[10px]">Period / Group / Block</span>
-          <span className="font-medium text-[11px]">
-            P{element.period} · G{element.group} · {element.block.toUpperCase()}-block
+          <span className="text-slate-400 block text-[10px]">Radius / Electroneg.</span>
+          <span className="font-mono text-[10px] text-slate-300">
+            {atomicRadius ? `${atomicRadius} pm` : 'N/A'} · {element.electronegativity ?? 'N/A'}
           </span>
         </div>
 

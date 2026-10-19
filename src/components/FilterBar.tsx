@@ -1,5 +1,5 @@
 import React from 'react';
-import { Filter, RotateCcw } from 'lucide-react';
+import { Filter, RotateCcw, Star } from 'lucide-react';
 
 interface FilterBarProps {
   activeClassification: 'all' | 'metals' | 'nonmetals' | 'metalloids' | 'halogens';
@@ -8,6 +8,9 @@ interface FilterBarProps {
   onSelectBlock: (b: 'all' | 's' | 'p' | 'd' | 'f') => void;
   activeStateFilter: 'all' | 'solid' | 'liquid' | 'gas';
   onSelectStateFilter: (s: 'all' | 'solid' | 'liquid' | 'gas') => void;
+  onlyFavorites: boolean;
+  onToggleOnlyFavorites: () => void;
+  favoritesCount: number;
   hasActiveFilters: boolean;
   onResetAll: () => void;
   darkMode: boolean;
@@ -20,6 +23,9 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   onSelectBlock,
   activeStateFilter,
   onSelectStateFilter,
+  onlyFavorites,
+  onToggleOnlyFavorites,
+  favoritesCount,
   hasActiveFilters,
   onResetAll,
   darkMode,
@@ -41,17 +47,18 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200 shadow-sm'
       }`}
     >
-      {/* Classification Group */}
+      {/* Classification Group & Favorites */}
       <div className="flex items-center gap-2 flex-wrap">
         <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 mr-1 uppercase">
           <Filter size={14} />
           <span>Class:</span>
         </div>
         {classifications.map((item) => {
-          const isActive = activeClassification === item.id;
+          const isActive = activeClassification === item.id && !onlyFavorites;
           return (
             <button
               key={item.id}
+              type="button"
               onClick={() => onSelectClassification(item.id)}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 isActive
@@ -72,6 +79,30 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             </button>
           );
         })}
+
+        {/* Favorites Quick Filter Button */}
+        <button
+          type="button"
+          onClick={onToggleOnlyFavorites}
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 border ${
+            onlyFavorites
+              ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-md shadow-amber-400/20 font-bold scale-[1.02]'
+              : darkMode
+              ? 'bg-amber-400/10 hover:bg-amber-400/20 border-amber-400/30 text-amber-300'
+              : 'bg-amber-50 hover:bg-amber-100 border-amber-200 text-amber-800'
+          }`}
+          title="Filter to show only your favorited elements"
+        >
+          <Star size={13} className={onlyFavorites ? 'fill-slate-950' : 'fill-amber-400 text-amber-400'} />
+          <span>Favorites</span>
+          <span
+            className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+              onlyFavorites ? 'bg-black/20 text-slate-950 font-mono' : 'bg-amber-400/20 text-amber-300 font-mono'
+            }`}
+          >
+            {favoritesCount}
+          </span>
+        </button>
       </div>
 
       {/* Blocks & State Filters */}
@@ -83,6 +114,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             {blocks.map((b) => (
               <button
                 key={b}
+                type="button"
                 onClick={() => onSelectBlock(b)}
                 className={`px-2.5 py-1 rounded-lg text-xs font-bold uppercase transition-colors ${
                   activeBlock === b
@@ -103,6 +135,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             {states.map((s) => (
               <button
                 key={s}
+                type="button"
                 onClick={() => onSelectStateFilter(s)}
                 className={`px-2.5 py-1 rounded-lg text-xs font-medium capitalize transition-colors ${
                   activeStateFilter === s
@@ -119,11 +152,12 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         {/* Reset Filter Button */}
         {hasActiveFilters && (
           <button
+            type="button"
             onClick={onResetAll}
             className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 transition-colors"
           >
             <RotateCcw size={12} />
-            <span>Reset Filters</span>
+            <span>Reset</span>
           </button>
         )}
       </div>

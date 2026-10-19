@@ -1,7 +1,8 @@
 import React from 'react';
-import { X, ArrowRightLeft } from 'lucide-react';
+import { X, ArrowRightLeft, Scale } from 'lucide-react';
 import { type ElementData, ELEMENTS_DATA, CATEGORIES } from '../data/elements';
 import { formatTemp } from '../utils/helpers';
+import { ATOMIC_RADII_PM } from '../data/trends';
 
 interface CompareModalProps {
   isOpen: boolean;
@@ -30,50 +31,64 @@ export const CompareModal: React.FC<CompareModalProps> = ({
   const cat1 = CATEGORIES[e1.category] || CATEGORIES['unknown'];
   const cat2 = CATEGORIES[e2.category] || CATEGORIES['unknown'];
 
+  const r1 = ATOMIC_RADII_PM[e1.number];
+  const r2 = ATOMIC_RADII_PM[e2.number];
+
+  const handleSwap = () => {
+    onSelectElement1(e2);
+    onSelectElement2(e1);
+  };
+
   const rows = [
-    { label: 'Atomic Number', v1: e1.number, v2: e2.number },
-    { label: 'Relative Atomic Mass', v1: `${e1.atomicMass} u`, v2: `${e2.atomicMass} u` },
-    { label: 'Category', v1: e1.categoryName, v2: e2.categoryName, color1: cat1.color, color2: cat2.color },
+    { label: 'Atomic Number', v1: e1.number, v2: e2.number, mono: true },
+    { label: 'Standard Atomic Weight', v1: `${e1.atomicMass} u`, v2: `${e2.atomicMass} u`, mono: true },
+    { label: 'Chemical Category', v1: e1.categoryName, v2: e2.categoryName, color1: cat1.color, color2: cat2.color },
     { label: 'Period / Group', v1: `P${e1.period} / G${e1.group}`, v2: `P${e2.period} / G${e2.group}` },
     { label: 'Block', v1: `${e1.block.toUpperCase()}-block`, v2: `${e2.block.toUpperCase()}-block` },
     { label: 'Standard State', v1: e1.standardState, v2: e2.standardState, capitalize: true },
-    { label: 'Electron Config', v1: e1.electronConfigurationSemantic || e1.electronConfiguration, v2: e2.electronConfigurationSemantic || e2.electronConfiguration, mono: true },
-    { label: 'Shells (e⁻)', v1: e1.shells.join(', '), v2: e2.shells.join(', ') },
+    { label: 'Atomic Radius', v1: r1 ? `${r1} pm` : 'N/A', v2: r2 ? `${r2} pm` : 'N/A' },
+    { label: 'Electronegativity (Pauling)', v1: e1.electronegativity ?? 'N/A', v2: e2.electronegativity ?? 'N/A', mono: true },
+    { label: '1st Ionization Energy', v1: e1.ionizationEnergy ? `${e1.ionizationEnergy} kJ/mol` : 'N/A', v2: e2.ionizationEnergy ? `${e2.ionizationEnergy} kJ/mol` : 'N/A', mono: true },
+    { label: 'Density (at STP)', v1: e1.density ? `${e1.density} g/cm³` : 'N/A', v2: e2.density ? `${e2.density} g/cm³` : 'N/A' },
     { label: 'Melting Point', v1: formatTemp(e1.meltingPointKelvin, 'C'), v2: formatTemp(e2.meltingPointKelvin, 'C') },
     { label: 'Boiling Point', v1: formatTemp(e1.boilingPointKelvin, 'C'), v2: formatTemp(e2.boilingPointKelvin, 'C') },
-    { label: 'Density', v1: e1.density ? `${e1.density} g/cm³` : 'N/A', v2: e2.density ? `${e2.density} g/cm³` : 'N/A' },
-    { label: 'Electronegativity', v1: e1.electronegativity ?? 'N/A', v2: e2.electronegativity ?? 'N/A' },
-    { label: '1st Ionization Energy', v1: e1.ionizationEnergy ? `${e1.ionizationEnergy} kJ/mol` : 'N/A', v2: e2.ionizationEnergy ? `${e2.ionizationEnergy} kJ/mol` : 'N/A' },
+    { label: 'Electron Configuration', v1: e1.electronConfigurationSemantic || e1.electronConfiguration, v2: e2.electronConfigurationSemantic || e2.electronConfiguration, mono: true },
+    { label: 'Shell Distribution (e⁻)', v1: e1.shells.join(', '), v2: e2.shells.join(', '), mono: true },
     { label: 'Discovered By', v1: e1.discoveredBy, v2: e2.discoveredBy },
   ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 backdrop-blur-md bg-black/60 overflow-y-auto">
-      <div className="fixed inset-0" onClick={onClose} />
+      <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
 
       <div
-        className={`relative z-10 w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden border ${
+        className={`relative z-10 w-full max-w-4xl max-h-[92vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden border ${
           darkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
         }`}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b flex items-center justify-between border-white/10">
+        <div className="px-6 py-4 border-b flex items-center justify-between border-white/10 shrink-0">
           <div className="flex items-center gap-2">
-            <ArrowRightLeft className="text-cyan-400" size={20} />
+            <Scale className="text-cyan-400" size={20} />
             <h2 className="text-lg font-bold">Side-by-Side Element Comparison</h2>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white"
+            aria-label="Close comparison modal"
+            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Element Selectors */}
-        <div className="grid grid-cols-2 p-4 sm:p-6 gap-4 border-b border-white/10 bg-slate-950/40">
+        {/* Element Selectors & Swap */}
+        <div className="grid grid-cols-1 md:grid-cols-[1fr,auto,1fr] p-4 sm:p-6 gap-4 border-b border-white/10 bg-slate-950/40 shrink-0 items-center">
+          {/* Element 1 Selector */}
           <div>
-            <label className="text-xs text-slate-400 block mb-1 font-semibold uppercase">Element 1</label>
+            <label className="text-xs text-slate-400 block mb-1 font-semibold uppercase">
+              Element 1
+            </label>
             <select
               value={e1.number}
               onChange={(e) => {
@@ -91,20 +106,38 @@ export const CompareModal: React.FC<CompareModalProps> = ({
 
             <div className="mt-3 flex items-center gap-3">
               <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-xl border"
+                className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-xl border shadow-sm"
                 style={{ backgroundColor: `${cat1.color}25`, borderColor: cat1.color, color: cat1.color }}
               >
                 {e1.symbol}
               </div>
               <div>
                 <h3 className="font-bold text-base leading-tight">{e1.name}</h3>
-                <span className="text-xs text-slate-400">{e1.categoryName}</span>
+                <span className="text-xs text-slate-400">
+                  {e1.categoryName} • P{e1.period} G{e1.group}
+                </span>
               </div>
             </div>
           </div>
 
+          {/* Swap Button */}
+          <div className="flex justify-center my-1 md:my-0">
+            <button
+              type="button"
+              onClick={handleSwap}
+              title="Swap elements"
+              aria-label="Swap elements"
+              className="p-2.5 rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/30 transition-all hover:scale-110"
+            >
+              <ArrowRightLeft size={18} />
+            </button>
+          </div>
+
+          {/* Element 2 Selector */}
           <div>
-            <label className="text-xs text-slate-400 block mb-1 font-semibold uppercase">Element 2</label>
+            <label className="text-xs text-slate-400 block mb-1 font-semibold uppercase">
+              Element 2
+            </label>
             <select
               value={e2.number}
               onChange={(e) => {
@@ -122,14 +155,16 @@ export const CompareModal: React.FC<CompareModalProps> = ({
 
             <div className="mt-3 flex items-center gap-3">
               <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-xl border"
+                className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-xl border shadow-sm"
                 style={{ backgroundColor: `${cat2.color}25`, borderColor: cat2.color, color: cat2.color }}
               >
                 {e2.symbol}
               </div>
               <div>
                 <h3 className="font-bold text-base leading-tight">{e2.name}</h3>
-                <span className="text-xs text-slate-400">{e2.categoryName}</span>
+                <span className="text-xs text-slate-400">
+                  {e2.categoryName} • P{e2.period} G{e2.group}
+                </span>
               </div>
             </div>
           </div>
@@ -137,34 +172,51 @@ export const CompareModal: React.FC<CompareModalProps> = ({
 
         {/* Comparison Table */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-          <table className="w-full text-left text-xs sm:text-sm border-collapse">
-            <thead>
-              <tr className="border-b border-white/10 text-slate-400 uppercase text-[11px]">
-                <th className="py-2.5 px-3">Property</th>
-                <th className="py-2.5 px-3 w-5/12 font-semibold text-white">{e1.name}</th>
-                <th className="py-2.5 px-3 w-5/12 font-semibold text-white">{e2.name}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {rows.map((row, idx) => (
-                <tr key={idx} className="hover:bg-white/5 transition-colors">
-                  <td className="py-2.5 px-3 text-slate-400 font-medium whitespace-nowrap">{row.label}</td>
-                  <td
-                    className={`py-2.5 px-3 ${row.mono ? 'font-mono text-xs' : ''} ${row.capitalize ? 'capitalize' : ''}`}
-                    style={row.color1 ? { color: row.color1, fontWeight: 'bold' } : undefined}
-                  >
-                    {row.v1}
-                  </td>
-                  <td
-                    className={`py-2.5 px-3 ${row.mono ? 'font-mono text-xs' : ''} ${row.capitalize ? 'capitalize' : ''}`}
-                    style={row.color2 ? { color: row.color2, fontWeight: 'bold' } : undefined}
-                  >
-                    {row.v2}
-                  </td>
+          <div className="overflow-hidden rounded-xl border border-white/10">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className={darkMode ? 'bg-slate-800/80 text-slate-300' : 'bg-slate-100 text-slate-700'}>
+                  <th className="p-3 font-semibold uppercase tracking-wider text-[10px] w-1/3">Property</th>
+                  <th className="p-3 font-semibold uppercase tracking-wider text-[10px] w-1/3">
+                    {e1.name} ({e1.symbol})
+                  </th>
+                  <th className="p-3 font-semibold uppercase tracking-wider text-[10px] w-1/3">
+                    {e2.name} ({e2.symbol})
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {rows.map((row, idx) => (
+                  <tr
+                    key={idx}
+                    className={`transition-colors ${
+                      idx % 2 === 0
+                        ? darkMode
+                          ? 'bg-slate-900/40'
+                          : 'bg-white'
+                        : darkMode
+                        ? 'bg-slate-800/20'
+                        : 'bg-slate-50'
+                    } hover:bg-cyan-500/10`}
+                  >
+                    <td className="p-3 text-slate-400 font-medium">{row.label}</td>
+                    <td
+                      className={`p-3 ${row.mono ? 'font-mono' : ''} ${row.capitalize ? 'capitalize' : ''}`}
+                      style={{ color: row.color1 }}
+                    >
+                      {row.v1}
+                    </td>
+                    <td
+                      className={`p-3 ${row.mono ? 'font-mono' : ''} ${row.capitalize ? 'capitalize' : ''}`}
+                      style={{ color: row.color2 }}
+                    >
+                      {row.v2}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

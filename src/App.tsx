@@ -3,13 +3,16 @@ import { ELEMENTS_DATA, type ElementData } from './data/elements';
 import { Header } from './components/Header';
 import { FilterBar } from './components/FilterBar';
 import { LegendBar } from './components/LegendBar';
+import { TrendsBar } from './components/TrendsBar';
 import { PeriodicTable } from './components/PeriodicTable';
 import { ElementDetailPanel } from './components/ElementDetailPanel';
 import { ElementTooltip } from './components/ElementTooltip';
 import { TemperatureBar } from './components/TemperatureBar';
 import { CompareModal } from './components/CompareModal';
 import { QuizModal } from './components/QuizModal';
-import { Atom, Sparkles, Layers } from 'lucide-react';
+import { Atom, Sparkles, Layers, TrendingUp } from 'lucide-react';
+import { useFavorites } from './utils/useFavorites';
+import type { TrendType } from './data/trends';
 
 export function App() {
   const [darkMode, setDarkMode] = useState<boolean>(true);
@@ -23,8 +26,15 @@ export function App() {
   const [layoutMode, setLayoutMode] = useState<'standard' | 'extended'>('standard');
   const [temperatureKelvin, setTemperatureKelvin] = useState<number>(293.15); // 20°C room temp
 
+  // Periodic Trends State
+  const [trendMode, setTrendMode] = useState<TrendType>('none');
+
+  // Favorites Hook
+  const { isFavorite, toggleFavorite, favoritesCount } = useFavorites();
+  const [onlyFavorites, setOnlyFavorites] = useState<boolean>(false);
+
   // Modals & Panels
-  const [selectedElement, setSelectedElement] = useState<ElementData | null>(null);
+  const [selectedElement, setSelectedElement] = useState<ElementData | null>(ELEMENTS_DATA[0]); // Start with Hydrogen
   const [hoveredElement, setHoveredElement] = useState<ElementData | null>(null);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
@@ -35,7 +45,7 @@ export function App() {
   const [compareElement2, setCompareElement2] = useState<ElementData | null>(ELEMENTS_DATA[5]); // Carbon
   const [isQuizOpen, setIsQuizOpen] = useState(false);
 
-  // Sync dark mode class on document body
+  // Sync dark mode class on document element
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -64,6 +74,8 @@ export function App() {
     activeClassification !== 'all' ||
     selectedBlock !== 'all' ||
     selectedStateFilter !== 'all' ||
+    trendMode !== 'none' ||
+    onlyFavorites ||
     Math.round(temperatureKelvin) !== 293;
 
   const handleResetAll = () => {
@@ -74,16 +86,20 @@ export function App() {
     setSelectedStateFilter('all');
     setTemperatureKelvin(293.15);
     setHoveredCategory(null);
+    setTrendMode('none');
+    setOnlyFavorites(false);
   };
 
   const handleClassificationChange = (c: 'all' | 'metals' | 'nonmetals' | 'metalloids' | 'halogens') => {
     setActiveClassification(c);
     setSelectedCategory(c);
+    setOnlyFavorites(false);
   };
 
   const handleCategorySelect = (catId: string) => {
     setSelectedCategory(catId);
     setActiveClassification('all');
+    setOnlyFavorites(false);
   };
 
   const handleHoverElement = (el: ElementData | null, e?: React.MouseEvent<HTMLDivElement>) => {
@@ -130,11 +146,7 @@ export function App() {
       />
 
       {/* Main Content Workspace */}
-      <main
-        className={`flex-1 max-w-[1700px] w-full mx-auto px-3 sm:px-6 py-5 space-y-5 transition-all duration-300 ${
-          selectedElement ? '2xl:mr-[530px]' : ''
-        }`}
-      >
+      <main className="flex-1 max-w-[1720px] w-full mx-auto px-3 sm:px-6 py-5 space-y-4">
         {/* Top Control Panels: Classification & Block Filters */}
         <FilterBar
           activeClassification={activeClassification}
@@ -143,8 +155,19 @@ export function App() {
           onSelectBlock={setSelectedBlock}
           activeStateFilter={selectedStateFilter}
           onSelectStateFilter={setSelectedStateFilter}
+          onlyFavorites={onlyFavorites}
+          onToggleOnlyFavorites={() => setOnlyFavorites((prev) => !prev)}
+          favoritesCount={favoritesCount}
           hasActiveFilters={hasActiveFiltersOrSearch}
           onResetAll={handleResetAll}
+          darkMode={darkMode}
+        />
+
+        {/* Periodic Trends Control Bar */}
+        <TrendsBar
+          trendMode={trendMode}
+          onSelectTrend={setTrendMode}
+          elements={ELEMENTS_DATA}
           darkMode={darkMode}
         />
 
@@ -159,7 +182,7 @@ export function App() {
         {/* Main Workspace: Left Side = Periodic Table, Right Side = Element Information */}
         <div className="flex flex-col lg:flex-row gap-5 items-start w-full">
           {/* LEFT SIDE: Periodic Table & Color Legend */}
-          <div className="flex-1 w-full min-w-0 space-y-5">
+          <div className="flex-1 w-full min-w-0 space-y-4">
             {/* The Core Periodic Table Matrix */}
             <section className="relative">
               <PeriodicTable
@@ -174,29 +197,36 @@ export function App() {
                 layoutMode={layoutMode}
                 temperatureKelvin={temperatureKelvin}
                 darkMode={darkMode}
+                trendMode={trendMode}
+                onlyFavorites={onlyFavorites}
+                isFavorite={isFavorite}
                 onSelectElement={(el) => setSelectedElement(el)}
                 onHoverElement={handleHoverElement}
                 onSelectCategory={handleCategorySelect}
               />
             </section>
 
-            {/* Color Legend Bar */}
-            <LegendBar
-              selectedCategory={selectedCategory}
-              onSelectCategory={handleCategorySelect}
-              hoveredCategory={hoveredCategory}
-              onHoverCategory={setHoveredCategory}
-              elements={ELEMENTS_DATA}
-              darkMode={darkMode}
-            />
+            {/* Color Legend Bar (visible when default category mode is active) */}
+            {trendMode === 'none' && (
+              <LegendBar
+                selectedCategory={selectedCategory}
+                onSelectCategory={handleCategorySelect}
+                hoveredCategory={hoveredCategory}
+                onHoverCategory={setHoveredCategory}
+                elements={ELEMENTS_DATA}
+                darkMode={darkMode}
+              />
+            )}
           </div>
 
           {/* RIGHT SIDE: Dedicated Element Information Panel */}
-          <aside className="w-full lg:w-[340px] xl:w-[370px] 2xl:w-[395px] shrink-0 lg:sticky lg:top-20">
+          <aside className="w-full lg:w-[350px] xl:w-[380px] 2xl:w-[410px] shrink-0 lg:sticky lg:top-20">
             <ElementDetailPanel
               element={selectedElement}
               darkMode={darkMode}
               temperatureKelvin={temperatureKelvin}
+              isFavorite={selectedElement ? isFavorite(selectedElement.number) : false}
+              onToggleFavorite={toggleFavorite}
               onSelectElement={(el) => setSelectedElement(el)}
               onAddToCompare={handleAddToCompare}
             />
@@ -204,35 +234,49 @@ export function App() {
         </div>
 
         {/* Informative Chemistry Overview Section */}
-        <section className={`rounded-2xl p-5 sm:p-6 border ${darkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <section
+          className={`rounded-2xl p-5 sm:p-6 border transition-colors ${
+            darkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200 shadow-sm'
+          }`}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-cyan-400 font-bold text-sm">
                 <Atom size={18} />
                 <h3>About The Periodic Table</h3>
               </div>
               <p className="text-xs text-slate-400 leading-relaxed">
-                The periodic table arranges all 118 chemical elements in order of increasing atomic number. Elements with similar chemical properties appear in the same vertical column (group), revealing recurring chemical periodicity.
+                The periodic table arranges all 118 chemical elements by atomic number. Elements with similar electronic configurations appear in the same group, manifesting recurring chemical periodicity.
               </p>
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-indigo-400 font-bold text-sm">
+                <TrendingUp size={18} />
+                <h3>Periodic Trends</h3>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Explore atomic radii, electronegativities, and ionization energies in real time. Observe how increasing effective nuclear charge and electron shielding drive elemental periodicity.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
                 <Layers size={18} />
                 <h3>Bohr Atomic Orbital Diagrams</h3>
               </div>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Click on any element in the grid to open the full interactive Bohr atomic model. Watch orbiting electrons distributed across concentric electron shells (K through Q) and examine electronic configurations.
+                Inspect orbiting electron models across concentric shells (K through Q) with reduced-motion accessibility, valence electron counts, and full electronic configurations.
               </p>
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
                 <Sparkles size={18} />
-                <h3>Phase Simulator & Explorer</h3>
+                <h3>Phase Simulator & Quiz</h3>
               </div>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Use the temperature slider to simulate temperatures from 0 K (absolute zero) up to 6000 K (solar surface). Observe elements melting into liquids and evaporating into gases in real-time according to their melting and boiling points.
+                Simulate temperatures from 0 K to 6000 K to observe real-time phase transitions, save your favorite elements, compare properties side-by-side, and challenge yourself with chemistry quizzes.
               </p>
             </div>
           </div>
@@ -269,9 +313,13 @@ export function App() {
       />
 
       {/* Footer */}
-      <footer className={`border-t py-6 text-center text-xs transition-colors ${darkMode ? 'bg-slate-950 border-slate-800 text-slate-500' : 'bg-white border-slate-200 text-slate-500'}`}>
-        <div className="max-w-[1700px] mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p>© {new Date().getFullYear()} Periodic Table of Elements Explorer. Complete IUPAC 118 Elements Dataset.</p>
+      <footer
+        className={`border-t py-6 text-center text-xs transition-colors ${
+          darkMode ? 'bg-slate-950 border-slate-800 text-slate-500' : 'bg-white border-slate-200 text-slate-500'
+        }`}
+      >
+        <div className="max-w-[1720px] mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p>© {new Date().getFullYear()} Periodic Table of Elements Explorer. Complete IUPAC 118 Elements Reference.</p>
           <div className="flex items-center gap-4 text-xs">
             <span className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -279,7 +327,8 @@ export function App() {
             </span>
             <span>•</span>
             <button
-              onClick={() => handleResetAll()}
+              type="button"
+              onClick={handleResetAll}
               className="text-cyan-400 hover:underline"
             >
               Reset All Filters
