@@ -105,28 +105,28 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header
-      className={`sticky top-0 z-40 backdrop-blur-xl border-b transition-colors px-4 sm:px-6 py-3.5 ${
+      className={`sticky top-0 z-40 backdrop-blur-xl border-b transition-colors px-3 sm:px-5 py-1.5 shrink-0 ${
         darkMode
-          ? 'bg-slate-950/85 border-slate-800 text-white'
-          : 'bg-white/85 border-slate-200 text-slate-900 shadow-sm'
+          ? 'bg-slate-950/90 border-slate-800 text-white'
+          : 'bg-white/90 border-slate-200 text-slate-900 shadow-xs'
       }`}
     >
-      <div className="max-w-[1720px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3.5">
+      <div className="max-w-[1720px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-2">
         {/* Branding & Title */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/20 shrink-0">
-            <Atom size={24} className="animate-spin" style={{ animationDuration: '20s' }} />
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-cyan-500/20 shrink-0">
+            <Atom size={18} className="animate-spin" style={{ animationDuration: '20s' }} />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight leading-none bg-gradient-to-r from-cyan-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">
+            <div className="flex items-center gap-1.5">
+              <h1 className="text-base sm:text-lg font-black tracking-tight leading-none bg-gradient-to-r from-cyan-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">
                 Periodic Table
               </h1>
-              <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+              <span className="text-[9px] uppercase font-bold tracking-widest px-1.5 py-0.2 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
                 118 Elements
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="hidden xl:block text-[10px] text-slate-400 leading-tight">
               Interactive Chemical Explorer & Atomic Reference
             </p>
           </div>
@@ -157,28 +157,28 @@ export const Header: React.FC<HeaderProps> = ({
               }}
               onKeyDown={handleInputKeyDown}
               placeholder="Search name, symbol, number... (Press '/')"
-              className={`w-full pl-10 pr-20 py-2 rounded-xl text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-cyan-500 border ${
+              className={`w-full pl-9 pr-20 py-1.5 rounded-lg text-xs font-medium transition-all focus:outline-none focus:ring-2 focus:ring-cyan-500 border ${
                 darkMode
                   ? 'bg-slate-900/90 border-slate-700/80 text-white placeholder-slate-400'
                   : 'bg-slate-100/90 border-slate-300 text-slate-900 placeholder-slate-500'
               }`}
             />
             {searchQuery ? (
-              <div className="absolute right-2.5 flex items-center gap-1.5">
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400">
+              <div className="absolute right-2 flex items-center gap-1">
+                <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-cyan-500/20 text-cyan-400">
                   {searchMatchCount} found
                 </span>
                 <button
                   type="button"
                   onClick={handleClear}
                   aria-label="Clear search query"
-                  className="p-1 rounded-full hover:bg-white/10 text-slate-400 hover:text-white"
+                  className="p-0.5 rounded-full hover:bg-white/10 text-slate-400 hover:text-white"
                 >
-                  <X size={14} />
+                  <X size={13} />
                 </button>
               </div>
             ) : (
-              <kbd className="absolute right-3 hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-white/5 border border-white/10 rounded">
+              <kbd className="absolute right-2.5 hidden sm:inline-block px-1.5 py-0.2 text-[9px] font-mono text-slate-400 bg-white/5 border border-white/10 rounded">
                 /
               </kbd>
             )}
@@ -259,7 +259,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Right Action buttons */}
-        <div className="flex items-center gap-2 flex-wrap justify-end">
+        <div className="flex items-center gap-1.5 flex-wrap justify-end">
           {/* Layout switch: Standard vs Extended */}
           <button
             type="button"
@@ -269,17 +269,17 @@ export const Header: React.FC<HeaderProps> = ({
                 ? 'Switch to Extended 32-Column Layout'
                 : 'Switch to Standard 18-Column Layout'
             }
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
               layoutMode === 'extended'
-                ? 'bg-purple-600/20 border-purple-500 text-purple-300 shadow-sm'
+                ? 'bg-purple-600/20 border-purple-500 text-purple-300 shadow-xs'
                 : darkMode
                 ? 'bg-slate-900 border-slate-750 text-slate-300 hover:bg-slate-800'
                 : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
             }`}
           >
-            {layoutMode === 'standard' ? <Grid size={15} /> : <Columns size={15} />}
-            <span className="hidden sm:inline">
-              {layoutMode === 'standard' ? 'Extended (32-Col)' : 'Standard (18-Col)'}
+            {layoutMode === 'standard' ? <Grid size={13} /> : <Columns size={13} />}
+            <span className="hidden sm:inline text-[11px]">
+              {layoutMode === 'standard' ? 'Extended' : 'Standard'}
             </span>
           </button>
 
@@ -288,14 +288,14 @@ export const Header: React.FC<HeaderProps> = ({
             type="button"
             onClick={onOpenCompare}
             title="Compare two elements side-by-side"
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
               darkMode
                 ? 'bg-slate-900 border-slate-750 text-slate-300 hover:bg-slate-800 hover:text-cyan-400'
                 : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
             }`}
           >
-            <ArrowRightLeft size={15} />
-            <span className="hidden lg:inline">Compare</span>
+            <ArrowRightLeft size={13} />
+            <span className="hidden lg:inline text-[11px]">Compare</span>
           </button>
 
           {/* Chemistry Quiz */}
@@ -303,9 +303,9 @@ export const Header: React.FC<HeaderProps> = ({
             type="button"
             onClick={onOpenQuiz}
             title="Test your periodic table knowledge"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow-md shadow-orange-500/20 transition-all font-bold"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow-sm shadow-orange-500/20 transition-all font-bold text-[11px]"
           >
-            <Award size={15} />
+            <Award size={13} />
             <span>Quiz</span>
           </button>
 
@@ -314,13 +314,13 @@ export const Header: React.FC<HeaderProps> = ({
             type="button"
             onClick={onToggleDarkMode}
             title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            className={`p-2 rounded-xl border transition-colors ${
+            className={`p-1.5 rounded-lg border transition-colors ${
               darkMode
                 ? 'bg-slate-900 border-slate-750 text-amber-400 hover:bg-slate-800'
                 : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
             }`}
           >
-            {darkMode ? <Sun size={17} /> : <Moon size={17} />}
+            {darkMode ? <Sun size={15} /> : <Moon size={15} />}
           </button>
 
           {/* Reset Filters */}
@@ -329,9 +329,9 @@ export const Header: React.FC<HeaderProps> = ({
               type="button"
               onClick={onResetAll}
               title="Reset all filters and search"
-              className="p-2 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-300 hover:bg-rose-500/30 transition-colors"
+              className="p-1.5 rounded-lg bg-rose-500/20 border border-rose-500/30 text-rose-300 hover:bg-rose-500/30 transition-colors"
             >
-              <RotateCcw size={17} />
+              <RotateCcw size={15} />
             </button>
           )}
         </div>

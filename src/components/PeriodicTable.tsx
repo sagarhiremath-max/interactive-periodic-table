@@ -130,10 +130,10 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
   const periods = [1, 2, 3, 4, 5, 6, 7];
 
   return (
-    <div className="relative w-full flex flex-col">
+    <div className="relative w-full h-full flex-1 min-h-0 flex flex-col justify-between">
       {/* Top info bar */}
-      <div className="flex items-center justify-between pb-2 px-1 text-xs text-slate-400">
-        <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center justify-between pb-1 px-1 text-[11px] text-slate-400 shrink-0">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <span>
             Layout: <strong className="text-white capitalize">{layoutMode}</strong>
           </span>
@@ -144,8 +144,8 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
         </div>
 
         {/* Mobile scroll hint */}
-        <div className="flex items-center gap-1 text-[11px] text-cyan-400 lg:hidden animate-pulse">
-          <ChevronsLeftRight size={13} />
+        <div className="flex items-center gap-1 text-[10px] text-cyan-400 lg:hidden animate-pulse">
+          <ChevronsLeftRight size={12} />
           <span>Scroll horizontally</span>
         </div>
       </div>
@@ -179,35 +179,35 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
         </div>
       )}
 
-      {/* Overflow scroll container */}
+      {/* Overflow scroll container on mobile, full-fit on desktop */}
       <div
         ref={containerRef}
-        className="w-full overflow-x-auto pb-4 pt-1 rounded-2xl transition-all border border-transparent focus-within:border-cyan-500/30"
+        className="w-full flex-1 min-h-0 flex flex-col overflow-x-auto overflow-y-hidden rounded-xl transition-all border border-transparent focus-within:border-cyan-500/30"
         style={{ scrollbarWidth: 'thin' }}
         tabIndex={0}
         aria-label="Interactive periodic table of elements grid"
       >
         <div
           style={{
-            minWidth: layoutMode === 'extended' ? '1420px' : '780px',
+            minWidth: layoutMode === 'extended' ? '1420px' : '720px',
             transition: 'transform 0.15s ease-out',
           }}
-          className="pb-2"
+          className="h-full flex-1 min-h-0 flex flex-col justify-center"
         >
           {/* Main Grid: 18 columns standard or 32 columns extended */}
           <div
-            className={`grid gap-1 relative ${
+            className={`grid gap-0.5 sm:gap-1 relative h-full flex-1 min-h-0 ${
               layoutMode === 'extended' ? 'grid-cols-32' : 'grid-cols-18'
             }`}
             style={{
               gridTemplateColumns:
                 layoutMode === 'extended'
-                  ? 'repeat(32, minmax(40px, 1fr))'
-                  : 'repeat(18, minmax(39px, 1fr))',
+                  ? 'repeat(32, minmax(36px, 1fr))'
+                  : 'repeat(18, minmax(36px, 1fr))',
               gridTemplateRows:
                 layoutMode === 'extended'
-                  ? 'repeat(7, auto)'
-                  : 'repeat(10, auto)',
+                  ? 'repeat(7, minmax(0, 1fr))'
+                  : 'repeat(7, minmax(0, 1fr)) clamp(2px, 0.4vh, 6px) repeat(2, minmax(0, 1fr))',
             }}
           >
             {/* Standard layout Group Headers (1 to 18) */}
@@ -216,10 +216,10 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
                 <div
                   key={grp.num}
                   style={{ gridColumnStart: grp.num, gridRowStart: 1 }}
-                  className="flex flex-col items-center justify-end pb-1 text-[10px] text-slate-400 font-mono text-center pointer-events-none -mt-5"
+                  className="flex flex-col items-center justify-end pb-0.5 text-[9px] text-slate-400 font-mono text-center pointer-events-none -mt-3.5"
                 >
                   <span className="font-bold text-slate-300">{grp.num}</span>
-                  <span className="text-[8px] opacity-70 leading-none">{grp.iupac.split(' ')[1]}</span>
+                  <span className="text-[7.5px] opacity-70 leading-none">{grp.iupac.split(' ')[1]}</span>
                 </div>
               ))}
 
@@ -229,7 +229,7 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
                 <div
                   key={`p-${p}`}
                   style={{ gridColumnStart: 1, gridRowStart: p }}
-                  className="absolute -left-5 top-0 bottom-0 flex items-center justify-center text-xs font-mono font-bold text-slate-500 pointer-events-none"
+                  className="absolute -left-4 top-0 bottom-0 flex items-center justify-center text-[10px] font-mono font-bold text-slate-500 pointer-events-none"
                   aria-hidden="true"
                 >
                   {p}
@@ -272,12 +272,12 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
                   type="button"
                   onClick={() => onSelectCategory('lanthanide')}
                   style={{ gridColumnStart: 3, gridRowStart: 6 }}
-                  className="rounded-lg p-1.5 border border-pink-500/40 bg-pink-950/20 hover:bg-pink-900/40 text-pink-300 flex flex-col items-center justify-center text-center transition-all cursor-pointer hover:scale-105"
+                  className="rounded-lg p-0.5 sm:p-1 border border-pink-500/40 bg-pink-950/20 hover:bg-pink-900/40 text-pink-300 flex flex-col items-center justify-center text-center transition-all cursor-pointer hover:scale-105 h-full min-h-0"
                   title="Click to highlight Lanthanide series (57-71)"
                 >
-                  <span className="font-mono text-[9px] opacity-80">57-71</span>
-                  <span className="font-bold text-xs">La-Lu</span>
-                  <span className="text-[8px] uppercase tracking-wider text-pink-400 font-semibold mt-0.5">
+                  <span className="font-mono text-[8px] opacity-80 leading-none">57-71</span>
+                  <span className="font-bold text-[10px] sm:text-xs leading-tight">La-Lu</span>
+                  <span className="text-[7px] uppercase tracking-wider text-pink-400 font-semibold hidden sm:inline">
                     Lanthanides
                   </span>
                 </button>
@@ -287,12 +287,12 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
                   type="button"
                   onClick={() => onSelectCategory('actinide')}
                   style={{ gridColumnStart: 3, gridRowStart: 7 }}
-                  className="rounded-lg p-1.5 border border-rose-500/40 bg-rose-950/20 hover:bg-rose-900/40 text-rose-300 flex flex-col items-center justify-center text-center transition-all cursor-pointer hover:scale-105"
+                  className="rounded-lg p-0.5 sm:p-1 border border-rose-500/40 bg-rose-950/20 hover:bg-rose-900/40 text-rose-300 flex flex-col items-center justify-center text-center transition-all cursor-pointer hover:scale-105 h-full min-h-0"
                   title="Click to highlight Actinide series (89-103)"
                 >
-                  <span className="font-mono text-[9px] opacity-80">89-103</span>
-                  <span className="font-bold text-xs">Ac-Lr</span>
-                  <span className="text-[8px] uppercase tracking-wider text-rose-400 font-semibold mt-0.5">
+                  <span className="font-mono text-[8px] opacity-80 leading-none">89-103</span>
+                  <span className="font-bold text-[10px] sm:text-xs leading-tight">Ac-Lr</span>
+                  <span className="text-[7px] uppercase tracking-wider text-rose-400 font-semibold hidden sm:inline">
                     Actinides
                   </span>
                 </button>
@@ -300,7 +300,7 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
                 {/* Gap Row 8 Indicator / Spacer label */}
                 <div
                   style={{ gridColumnStart: 1, gridRowStart: 8, gridColumnEnd: 19 }}
-                  className="h-4 flex items-center justify-center"
+                  className="flex items-center justify-center h-full min-h-0"
                 >
                   <div className="w-full border-t border-dashed border-white/10" />
                 </div>
@@ -308,9 +308,9 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
                 {/* Lanthanide series title tag */}
                 <div
                   style={{ gridColumnStart: 1, gridRowStart: 9, gridColumnEnd: 3 }}
-                  className="flex items-center justify-end pr-2 text-right pointer-events-none"
+                  className="flex items-center justify-end pr-1 sm:pr-2 text-right pointer-events-none"
                 >
-                  <span className="text-[11px] font-bold text-pink-400 uppercase tracking-wider">
+                  <span className="text-[9px] sm:text-[10px] font-bold text-pink-400 uppercase tracking-wider truncate">
                     Lanthanides ➔
                   </span>
                 </div>
@@ -318,9 +318,9 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
                 {/* Actinide series title tag */}
                 <div
                   style={{ gridColumnStart: 1, gridRowStart: 10, gridColumnEnd: 3 }}
-                  className="flex items-center justify-end pr-2 text-right pointer-events-none"
+                  className="flex items-center justify-end pr-1 sm:pr-2 text-right pointer-events-none"
                 >
-                  <span className="text-[11px] font-bold text-rose-400 uppercase tracking-wider">
+                  <span className="text-[9px] sm:text-[10px] font-bold text-rose-400 uppercase tracking-wider truncate">
                     Actinides ➔
                   </span>
                 </div>

@@ -130,8 +130,8 @@ export const ElementCell: React.FC<ElementCellProps> = ({
       onMouseLeave={onMouseLeave}
       className={`
         relative select-none cursor-pointer rounded-lg transition-all duration-150 ease-out
-        flex flex-col justify-between p-1 sm:p-1.5 border
-        w-full min-h-[46px] sm:min-h-[50px] md:min-h-[54px]
+        flex flex-col justify-between p-0.5 sm:p-1 lg:p-0.5 xl:p-1 border
+        w-full h-full min-h-0
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:z-30
         ${
           darkMode
@@ -177,23 +177,23 @@ export const ElementCell: React.FC<ElementCellProps> = ({
       {/* Top row: atomic number & state / favorite indicator */}
       <div className="flex items-center justify-between w-full mt-0 leading-none">
         <span
-          className={`font-mono text-[9px] sm:text-[10px] font-semibold ${
+          className={`font-mono text-[8px] sm:text-[9px] xl:text-[10px] font-semibold ${
             darkMode ? 'text-slate-400' : 'text-slate-500'
           }`}
         >
           {element.number}
         </span>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           {isFavorite && (
             <Star
-              size={9}
-              className="fill-amber-400 text-amber-400"
+              size={8}
+              className="fill-amber-400 text-amber-400 shrink-0"
               aria-label="Favorited"
             />
           )}
           <span
-            className="w-1.5 h-1.5 rounded-full transition-colors"
+            className="w-1.5 h-1.5 rounded-full transition-colors shrink-0"
             style={{ backgroundColor: stateColor }}
             title={`Phase: ${currentState} at ${Math.round(temperatureKelvin)} K`}
           />
@@ -203,7 +203,7 @@ export const ElementCell: React.FC<ElementCellProps> = ({
       {/* Symbol */}
       <div className="text-center my-0">
         <span
-          className="text-sm sm:text-base font-bold tracking-tight block leading-tight"
+          className="text-xs sm:text-sm lg:text-base font-bold tracking-tight block leading-tight"
           style={{ color: darkMode ? '#ffffff' : '#0f172a' }}
         >
           {element.symbol}
@@ -215,7 +215,7 @@ export const ElementCell: React.FC<ElementCellProps> = ({
         {trendMode === 'none' ? (
           <>
             <span
-              className={`text-[8px] sm:text-[9px] font-medium truncate ${
+              className={`text-[7.5px] sm:text-[8.5px] xl:text-[9px] font-medium truncate hidden sm:block ${
                 darkMode ? 'text-slate-300' : 'text-slate-600'
               }`}
               title={element.name}
@@ -223,7 +223,7 @@ export const ElementCell: React.FC<ElementCellProps> = ({
               {element.name}
             </span>
             <span
-              className={`font-mono text-[7px] sm:text-[8px] ${
+              className={`font-mono text-[7px] sm:text-[7.5px] xl:text-[8px] ${
                 darkMode ? 'text-slate-400' : 'text-slate-600'
               }`}
             >
@@ -232,7 +232,7 @@ export const ElementCell: React.FC<ElementCellProps> = ({
           </>
         ) : (
           <span
-            className={`font-mono text-[8px] sm:text-[9px] font-bold truncate ${
+            className={`font-mono text-[7.5px] sm:text-[8.5px] xl:text-[9px] font-bold truncate ${
               isMissingTrendData
                 ? 'text-slate-500 italic'
                 : darkMode

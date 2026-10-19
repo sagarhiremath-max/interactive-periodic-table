@@ -149,18 +149,17 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
   return (
     <div
       className={`
-        w-full rounded-2xl border flex flex-col shadow-xl overflow-hidden transition-all duration-200
+        w-full h-full max-h-full rounded-2xl border flex flex-col shadow-xl overflow-hidden transition-all duration-200
         ${
           darkMode
             ? 'bg-slate-900 border-slate-700/80 text-white'
             : 'bg-white border-slate-200 text-slate-900'
         }
       `}
-      style={{ minHeight: '540px' }}
     >
       {/* Header Banner with Category Accent Gradient */}
       <div
-        className="relative px-4 py-3 border-b flex items-center justify-between shrink-0"
+        className="relative px-3 py-2 border-b flex items-center justify-between shrink-0"
         style={{
           background: darkMode
             ? `linear-gradient(135deg, ${cat.color}25 0%, rgba(15,23,42,0.95) 100%)`
@@ -169,9 +168,9 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
         }}
       >
         {/* Left: Atomic Symbol Box & Title */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <div
-            className="w-12 h-12 rounded-xl flex flex-col items-center justify-center font-bold shadow-md border relative overflow-hidden shrink-0"
+            className="w-10 h-10 rounded-lg flex flex-col items-center justify-center font-bold shadow-xs border relative overflow-hidden shrink-0"
             style={{
               backgroundColor: `${cat.color}25`,
               borderColor: cat.color,
@@ -182,15 +181,15 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
               className="absolute top-0 left-0 right-0 h-0.5"
               style={{ backgroundColor: cat.color }}
             />
-            <span className="text-[9px] font-mono leading-none opacity-80">{currentElement.number}</span>
-            <span className="text-xl font-black leading-none my-0.5">{currentElement.symbol}</span>
+            <span className="text-[8px] font-mono leading-none opacity-80">{currentElement.number}</span>
+            <span className="text-base font-black leading-none my-0.2">{currentElement.symbol}</span>
           </div>
 
           <div>
             <div className="flex items-center gap-1.5 flex-wrap">
-              <h2 className="text-base font-bold tracking-tight">{currentElement.name}</h2>
+              <h2 className="text-sm font-bold tracking-tight">{currentElement.name}</h2>
               <span
-                className="px-2 py-0.5 rounded-full text-[9px] font-semibold border"
+                className="px-1.5 py-0.2 rounded-full text-[8.5px] font-semibold border"
                 style={{
                   backgroundColor: `${cat.color}20`,
                   borderColor: `${cat.color}50`,
@@ -200,7 +199,7 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
                 {currentElement.categoryName}
               </span>
             </div>
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5">
+            <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.2">
               <span>{currentElement.atomicMass} u</span>
               <span>•</span>
               <span className="capitalize font-medium flex items-center gap-1">
@@ -214,7 +213,7 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
         </div>
 
         {/* Right Action buttons */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           {/* Favorite Toggle Button */}
           {onToggleFavorite && (
             <button
@@ -222,13 +221,13 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
               onClick={() => onToggleFavorite(currentElement.number)}
               title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
               aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-              className={`p-2 rounded-xl transition-colors border ${
+              className={`p-1.5 rounded-lg transition-colors border ${
                 isFavorite
                   ? 'bg-amber-400/20 border-amber-400/40 text-amber-400'
                   : 'bg-white/10 hover:bg-white/20 border-white/5 text-slate-300 hover:text-white'
               }`}
             >
-              <Star size={16} className={isFavorite ? 'fill-amber-400' : ''} />
+              <Star size={14} className={isFavorite ? 'fill-amber-400' : ''} />
             </button>
           )}
 
@@ -239,9 +238,9 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
               onClick={() => onAddToCompare(currentElement)}
               title="Compare this element side-by-side"
               aria-label="Compare this element"
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/5 text-slate-300 hover:text-white transition-colors"
+              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/5 text-slate-300 hover:text-white transition-colors"
             >
-              <ArrowRightLeft size={16} />
+              <ArrowRightLeft size={14} />
             </button>
           )}
 
@@ -251,51 +250,51 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
             onClick={handleCopy}
             title="Copy element details to clipboard"
             aria-label="Copy element details"
-            className="p-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/5 text-slate-300 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/5 text-slate-300 hover:text-white transition-colors"
           >
-            {copied ? <Check size={16} className="text-emerald-400" /> : <Share2 size={16} />}
+            {copied ? <Check size={14} className="text-emerald-400" /> : <Share2 size={14} />}
           </button>
         </div>
       </div>
 
       {/* Quick Element Navigator (Prev / Next) */}
       <div
-        className={`flex items-center justify-between px-4 py-2 border-b text-xs shrink-0 ${
+        className={`flex items-center justify-between px-3 py-1 border-b text-xs shrink-0 ${
           darkMode ? 'bg-slate-950/70 border-slate-800' : 'bg-slate-50 border-slate-200'
         }`}
       >
         <button
           type="button"
           onClick={() => onSelectElement(prevElement)}
-          className="flex items-center gap-1 text-slate-400 hover:text-cyan-400 transition-colors font-medium"
+          className="flex items-center gap-1 text-slate-400 hover:text-cyan-400 transition-colors font-medium text-[11px]"
           title={`Previous: #${prevElement.number} ${prevElement.name}`}
         >
-          <ChevronLeft size={15} />
+          <ChevronLeft size={13} />
           <span>#{prevElement.number} {prevElement.name}</span>
         </button>
 
-        <span className="text-[11px] text-slate-400 font-mono">
-          Element {currentElement.number} of 118
+        <span className="text-[10px] text-slate-400 font-mono">
+          {currentElement.number} / 118
         </span>
 
         <button
           type="button"
           onClick={() => onSelectElement(nextElement)}
-          className="flex items-center gap-1 text-slate-400 hover:text-cyan-400 transition-colors font-medium"
+          className="flex items-center gap-1 text-slate-400 hover:text-cyan-400 transition-colors font-medium text-[11px]"
           title={`Next: #${nextElement.number} ${nextElement.name}`}
         >
           <span>#{nextElement.number} {nextElement.name}</span>
-          <ChevronRight size={15} />
+          <ChevronRight size={13} />
         </button>
       </div>
 
       {/* Slide Navigation Tabs */}
       <div
-        className={`flex items-center justify-between px-4 border-b shrink-0 ${
+        className={`flex items-center justify-between px-3 border-b shrink-0 ${
           darkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-100/60 border-slate-200'
         }`}
       >
-        <div className="flex items-center gap-1 overflow-x-auto py-1.5 w-full justify-between">
+        <div className="flex items-center gap-1 overflow-x-auto py-1 w-full justify-between">
           {slides.map((s, idx) => {
             const Icon = s.icon;
             const isActive = activeSlide === idx;
@@ -304,15 +303,15 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
                 key={s.id}
                 type="button"
                 onClick={() => goToSlide(idx)}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all whitespace-nowrap ${
+                className={`flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10.5px] font-semibold transition-all whitespace-nowrap ${
                   isActive
-                    ? 'bg-cyan-500 text-slate-950 shadow-sm font-bold'
+                    ? 'bg-cyan-500 text-slate-950 shadow-xs font-bold'
                     : darkMode
                     ? 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-black/5'
                 }`}
               >
-                <Icon size={12} />
+                <Icon size={11} />
                 <span>{s.title}</span>
               </button>
             );
@@ -323,7 +322,8 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
       {/* Slide Content Area with Smooth Transitions */}
       <div
         key={`${currentElement.number}-${activeSlide}`}
-        className="flex-1 overflow-y-auto p-4 relative min-h-[360px] animate-in fade-in duration-200"
+        className="flex-1 min-h-0 overflow-y-auto p-3 relative animate-in fade-in duration-200"
+        style={{ scrollbarWidth: 'thin' }}
       >
         {/* SLIDE 0: OVERVIEW */}
         {activeSlide === 0 && (
@@ -468,7 +468,7 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
             </div>
 
             <div
-              className={`w-full p-4 rounded-2xl border flex flex-col items-center justify-center ${
+              className={`w-full p-2 rounded-xl border flex flex-col items-center justify-center ${
                 darkMode ? 'bg-slate-950/70 border-slate-800' : 'bg-slate-100 border-slate-200'
               }`}
             >
@@ -477,7 +477,7 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
                 symbol={currentElement.symbol}
                 atomicNumber={currentElement.number}
                 categoryColor={cat.color}
-                size={200}
+                size={160}
               />
             </div>
 
@@ -712,7 +712,7 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
 
       {/* Bottom Slide Indicators */}
       <div
-        className={`px-5 py-2.5 border-t flex items-center justify-between text-xs shrink-0 ${
+        className={`px-3.5 py-1.5 border-t flex items-center justify-between text-xs shrink-0 ${
           darkMode ? 'bg-slate-950/80 border-slate-800' : 'bg-slate-50 border-slate-200'
         }`}
       >
@@ -723,15 +723,15 @@ export const ElementDetailPanel: React.FC<ElementDetailPanelProps> = ({
               type="button"
               onClick={() => goToSlide(idx)}
               className={`h-1.5 rounded-full transition-all ${
-                activeSlide === idx ? 'w-6 bg-cyan-400' : 'w-1.5 bg-slate-600 hover:bg-slate-400'
+                activeSlide === idx ? 'w-5 bg-cyan-400' : 'w-1.5 bg-slate-600 hover:bg-slate-400'
               }`}
               title={s.title}
             />
           ))}
         </div>
 
-        <div className="text-[11px] text-slate-400">
-          Slide {activeSlide + 1} of {slides.length}: <strong className="text-slate-200">{slides[activeSlide].title}</strong>
+        <div className="text-[10px] text-slate-400">
+          Slide {activeSlide + 1}/{slides.length}: <strong className="text-slate-200">{slides[activeSlide].title}</strong>
         </div>
       </div>
     </div>
