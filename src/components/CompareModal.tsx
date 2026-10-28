@@ -1,5 +1,5 @@
-import React from 'react';
-import { X, ArrowRightLeft, Scale, BarChart2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Scale, ArrowRightLeft, Plus, Trash2 } from 'lucide-react';
 import { type ElementData, ELEMENTS_DATA, CATEGORIES } from '../data/elements';
 import { formatTemp } from '../utils/helpers';
 import { ATOMIC_RADII_PM } from '../data/trends';
@@ -19,252 +19,299 @@ export const CompareModal: React.FC<CompareModalProps> = ({
   onClose,
   element1,
   element2,
-  darkMode,
   onSelectElement1,
   onSelectElement2,
 }) => {
+  const [element3, setElement3] = useState<ElementData | null>(ELEMENTS_DATA[7]); // Oxygen default for 3rd
+  const [showThird, setShowThird] = useState<boolean>(false);
+
   if (!isOpen) return null;
 
-  const e1 = element1 || ELEMENTS_DATA[0]; // Hydrogen default
-  const e2 = element2 || ELEMENTS_DATA[5]; // Carbon default
+  const e1 = element1 || ELEMENTS_DATA[0]; // Hydrogen
+  const e2 = element2 || ELEMENTS_DATA[5]; // Carbon
+  const e3 = element3 || ELEMENTS_DATA[7]; // Oxygen
 
   const cat1 = CATEGORIES[e1.category] || CATEGORIES['unknown'];
   const cat2 = CATEGORIES[e2.category] || CATEGORIES['unknown'];
+  const cat3 = CATEGORIES[e3.category] || CATEGORIES['unknown'];
 
   const r1 = ATOMIC_RADII_PM[e1.number];
   const r2 = ATOMIC_RADII_PM[e2.number];
+  const r3 = ATOMIC_RADII_PM[e3.number];
 
-  const handleSwap = () => {
+  const handleSwap12 = () => {
     onSelectElement1(e2);
     onSelectElement2(e1);
   };
 
   const rows = [
-    { label: 'Atomic Number', v1: e1.number, v2: e2.number, mono: true },
-    { label: 'Standard Atomic Weight', v1: `${e1.atomicMass} u`, v2: `${e2.atomicMass} u`, mono: true },
-    { label: 'Chemical Category', v1: e1.categoryName, v2: e2.categoryName, color1: cat1.color, color2: cat2.color },
-    { label: 'Period / Group', v1: `P${e1.period} / G${e1.group}`, v2: `P${e2.period} / G${e2.group}` },
-    { label: 'Block', v1: `${e1.block.toUpperCase()}-block`, v2: `${e2.block.toUpperCase()}-block` },
-    { label: 'Standard State', v1: e1.standardState, v2: e2.standardState, capitalize: true },
-    { label: 'Atomic Radius', v1: r1 ? `${r1} pm` : 'N/A', v2: r2 ? `${r2} pm` : 'N/A' },
-    { label: 'Electronegativity (Pauling)', v1: e1.electronegativity ?? 'N/A', v2: e2.electronegativity ?? 'N/A', mono: true },
-    { label: '1st Ionization Energy', v1: e1.ionizationEnergy ? `${e1.ionizationEnergy} kJ/mol` : 'N/A', v2: e2.ionizationEnergy ? `${e2.ionizationEnergy} kJ/mol` : 'N/A', mono: true },
-    { label: 'Density (at STP)', v1: e1.density ? `${e1.density} g/cm³` : 'N/A', v2: e2.density ? `${e2.density} g/cm³` : 'N/A' },
-    { label: 'Melting Point', v1: formatTemp(e1.meltingPointKelvin, 'C'), v2: formatTemp(e2.meltingPointKelvin, 'C') },
-    { label: 'Boiling Point', v1: formatTemp(e1.boilingPointKelvin, 'C'), v2: formatTemp(e2.boilingPointKelvin, 'C') },
-    { label: 'Electron Configuration', v1: e1.electronConfigurationSemantic || e1.electronConfiguration, v2: e2.electronConfigurationSemantic || e2.electronConfiguration, mono: true },
-    { label: 'Shell Distribution (e⁻)', v1: e1.shells.join(', '), v2: e2.shells.join(', '), mono: true },
-    { label: 'Discovered By', v1: e1.discoveredBy, v2: e2.discoveredBy },
+    { label: 'Atomic Number (Z)', v1: e1.number, v2: e2.number, v3: e3.number },
+    { label: 'Standard Atomic Weight', v1: `${e1.atomicMass} u`, v2: `${e2.atomicMass} u`, v3: `${e3.atomicMass} u` },
+    { label: 'Chemical Category', v1: e1.categoryName, v2: e2.categoryName, v3: e3.categoryName, color1: cat1.color, color2: cat2.color, color3: cat3.color },
+    { label: 'Period / Group', v1: `P${e1.period} · G${e1.group}`, v2: `P${e2.period} · G${e2.group}`, v3: `P${e3.period} · G${e3.group}` },
+    { label: 'Orbital Block', v1: `${e1.block.toUpperCase()}-block`, v2: `${e2.block.toUpperCase()}-block`, v3: `${e3.block.toUpperCase()}-block` },
+    { label: 'Standard State', v1: e1.standardState, v2: e2.standardState, v3: e3.standardState, capitalize: true },
+    { label: 'Protons / Neutrons / Electrons', v1: `${e1.number}p / ${Math.round(e1.atomicMassValue) - e1.number}n / ${e1.number}e`, v2: `${e2.number}p / ${Math.round(e2.atomicMassValue) - e2.number}n / ${e2.number}e`, v3: `${e3.number}p / ${Math.round(e3.atomicMassValue) - e3.number}n / ${e3.number}e` },
+    { label: 'Atomic Radius', v1: r1 ? `${r1} pm` : 'N/A', v2: r2 ? `${r2} pm` : 'N/A', v3: r3 ? `${r3} pm` : 'N/A' },
+    { label: 'Electronegativity (Pauling)', v1: e1.electronegativity ?? 'N/A', v2: e2.electronegativity ?? 'N/A', v3: e3.electronegativity ?? 'N/A' },
+    { label: '1st Ionization Energy', v1: e1.ionizationEnergy ? `${e1.ionizationEnergy} kJ/mol` : 'N/A', v2: e2.ionizationEnergy ? `${e2.ionizationEnergy} kJ/mol` : 'N/A', v3: e3.ionizationEnergy ? `${e3.ionizationEnergy} kJ/mol` : 'N/A' },
+    { label: 'Density (at STP)', v1: e1.density ? `${e1.density} g/cm³` : 'N/A', v2: e2.density ? `${e2.density} g/cm³` : 'N/A', v3: e3.density ? `${e3.density} g/cm³` : 'N/A' },
+    { label: 'Melting Point', v1: formatTemp(e1.meltingPointKelvin, 'C'), v2: formatTemp(e2.meltingPointKelvin, 'C'), v3: formatTemp(e3.meltingPointKelvin, 'C') },
+    { label: 'Boiling Point', v1: formatTemp(e1.boilingPointKelvin, 'C'), v2: formatTemp(e2.boilingPointKelvin, 'C'), v3: formatTemp(e3.boilingPointKelvin, 'C') },
+    { label: 'Electron Configuration', v1: e1.electronConfigurationSemantic || e1.electronConfiguration, v2: e2.electronConfigurationSemantic || e2.electronConfiguration, v3: e3.electronConfigurationSemantic || e3.electronConfiguration },
+    { label: 'Shell Population (K-Q)', v1: e1.shells.join(' · '), v2: e2.shells.join(' · '), v3: e3.shells.join(' · ') },
+    { label: 'Discoverer', v1: e1.discoveredBy, v2: e2.discoveredBy, v3: e3.discoveredBy },
   ];
 
-  // Visual bar comparison items
+  // Visual comparison metric bars
   const visualMetrics = [
     {
       name: 'Atomic Weight (u)',
       val1: e1.atomicMassValue,
       val2: e2.atomicMassValue,
+      val3: e3.atomicMassValue,
       fmt1: `${e1.atomicMass} u`,
       fmt2: `${e2.atomicMass} u`,
+      fmt3: `${e3.atomicMass} u`,
     },
     {
       name: 'Atomic Radius (pm)',
       val1: r1,
       val2: r2,
+      val3: r3,
       fmt1: r1 ? `${r1} pm` : 'N/A',
       fmt2: r2 ? `${r2} pm` : 'N/A',
+      fmt3: r3 ? `${r3} pm` : 'N/A',
     },
     {
       name: 'Electronegativity (Pauling)',
       val1: e1.electronegativity,
       val2: e2.electronegativity,
+      val3: e3.electronegativity,
       fmt1: e1.electronegativity ? `${e1.electronegativity}` : 'N/A',
       fmt2: e2.electronegativity ? `${e2.electronegativity}` : 'N/A',
+      fmt3: e3.electronegativity ? `${e3.electronegativity}` : 'N/A',
     },
     {
       name: 'Ionization Energy (kJ/mol)',
       val1: e1.ionizationEnergy,
       val2: e2.ionizationEnergy,
+      val3: e3.ionizationEnergy,
       fmt1: e1.ionizationEnergy ? `${e1.ionizationEnergy} kJ/mol` : 'N/A',
       fmt2: e2.ionizationEnergy ? `${e2.ionizationEnergy} kJ/mol` : 'N/A',
+      fmt3: e3.ionizationEnergy ? `${e3.ionizationEnergy} kJ/mol` : 'N/A',
     },
     {
       name: 'Density (g/cm³)',
       val1: e1.density,
       val2: e2.density,
+      val3: e3.density,
       fmt1: e1.density ? `${e1.density} g/cm³` : 'N/A',
       fmt2: e2.density ? `${e2.density} g/cm³` : 'N/A',
+      fmt3: e3.density ? `${e3.density} g/cm³` : 'N/A',
+    },
+    {
+      name: 'Melting Point (K)',
+      val1: e1.meltingPointKelvin,
+      val2: e2.meltingPointKelvin,
+      val3: e3.meltingPointKelvin,
+      fmt1: e1.meltingPointKelvin ? `${Math.round(e1.meltingPointKelvin)} K` : 'N/A',
+      fmt2: e2.meltingPointKelvin ? `${Math.round(e2.meltingPointKelvin)} K` : 'N/A',
+      fmt3: e3.meltingPointKelvin ? `${Math.round(e3.meltingPointKelvin)} K` : 'N/A',
     },
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 backdrop-blur-md bg-black/60 overflow-y-auto">
-      <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
-
-      <div
-        className={`relative z-10 w-full max-w-4xl max-h-[92vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden border ${
-          darkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
-        }`}
-      >
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md overflow-y-auto font-sans select-none"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-full max-w-5xl max-h-[92vh] flex flex-col rounded-2xl bg-slate-950 border border-cyan-500/30 text-slate-100 shadow-[0_16px_48px_rgba(0,0,0,0.7)] overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4 border-b flex items-center justify-between border-white/10 shrink-0">
-          <div className="flex items-center gap-2">
-            <Scale className="text-cyan-400" size={20} />
-            <h2 className="text-lg font-bold">Side-by-Side Element Comparison</h2>
+        <div className="px-5 py-4 border-b border-slate-800 bg-slate-900/80 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/40">
+              <Scale className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                Element Property Comparison Matrix
+              </h2>
+              <p className="text-xs text-slate-400">
+                Compare {showThird ? '3 elements' : '2 elements'} side-by-side with metric difference charts
+              </p>
+            </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close comparison modal"
-            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors"
-          >
-            <X size={18} />
-          </button>
+
+          <div className="flex items-center gap-2">
+            {!showThird ? (
+              <button
+                type="button"
+                onClick={() => setShowThird(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30 transition-all cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add 3rd Element</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowThird(false)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-rose-950/60 text-rose-300 border border-rose-500/40 hover:bg-rose-900/60 transition-all cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Remove 3rd</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={handleSwap12}
+              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-all cursor-pointer"
+              title="Swap element 1 and 2"
+            >
+              <ArrowRightLeft className="w-4 h-4" />
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 rounded-xl bg-slate-800 hover:bg-rose-950/80 text-slate-300 hover:text-rose-300 border border-slate-700 hover:border-rose-500/50 transition-all cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
-        {/* Element Selectors & Swap - Always Side-by-Side */}
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center p-3 sm:p-5 gap-2 sm:gap-4 border-b border-white/10 bg-slate-950/40 shrink-0">
+        {/* Element Selection Headers */}
+        <div className={`p-4 border-b border-slate-800/80 bg-slate-900/40 grid ${showThird ? 'grid-cols-3' : 'grid-cols-2'} gap-3 shrink-0`}>
           {/* Element 1 Selector */}
-          <div className="min-w-0">
-            <label className="text-[10px] sm:text-xs text-slate-400 block mb-1 font-semibold uppercase tracking-wider truncate">
-              Element 1
-            </label>
+          <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono uppercase text-cyan-400 font-bold">Slot 1</span>
+              <span className="text-[10px] font-mono text-slate-400">Z = {e1.number}</span>
+            </div>
             <select
               value={e1.number}
               onChange={(e) => {
-                const found = ELEMENTS_DATA.find((el) => el.number === Number(e.target.value));
+                const found = ELEMENTS_DATA.find((item) => item.number === Number(e.target.value));
                 if (found) onSelectElement1(found);
               }}
-              className="w-full p-2 sm:p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs sm:text-sm font-medium focus:ring-2 focus:ring-cyan-500 focus:outline-none truncate"
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs font-bold text-white focus:outline-none focus:border-cyan-400 cursor-pointer"
             >
-              {ELEMENTS_DATA.map((el) => (
-                <option key={el.number} value={el.number}>
-                  #{el.number} {el.name} ({el.symbol})
+              {ELEMENTS_DATA.map((elem) => (
+                <option key={elem.number} value={elem.number}>
+                  #{elem.number} {elem.symbol} — {elem.name}
                 </option>
               ))}
             </select>
-
-            <div className="mt-2.5 flex items-center gap-2 sm:gap-3 min-w-0">
-              <div
-                className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center font-bold text-lg sm:text-xl border shadow-sm shrink-0"
-                style={{ backgroundColor: `${cat1.color}25`, borderColor: cat1.color, color: cat1.color }}
-              >
-                {e1.symbol}
-              </div>
-              <div className="min-w-0 truncate">
-                <h3 className="font-bold text-sm sm:text-base leading-tight truncate">{e1.name}</h3>
-                <span className="text-[10.5px] sm:text-xs text-slate-400 block truncate">
-                  {e1.categoryName} • P{e1.period} G{e1.group}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Swap Button */}
-          <div className="flex justify-center shrink-0 pt-4">
-            <button
-              type="button"
-              onClick={handleSwap}
-              title="Swap elements"
-              aria-label="Swap elements"
-              className="p-2 sm:p-2.5 rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/30 transition-all hover:scale-110 shadow-xs"
-            >
-              <ArrowRightLeft size={16} className="sm:w-[18px] sm:h-[18px]" />
-            </button>
           </div>
 
           {/* Element 2 Selector */}
-          <div className="min-w-0">
-            <label className="text-[10px] sm:text-xs text-slate-400 block mb-1 font-semibold uppercase tracking-wider truncate">
-              Element 2
-            </label>
+          <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono uppercase text-violet-400 font-bold">Slot 2</span>
+              <span className="text-[10px] font-mono text-slate-400">Z = {e2.number}</span>
+            </div>
             <select
               value={e2.number}
               onChange={(e) => {
-                const found = ELEMENTS_DATA.find((el) => el.number === Number(e.target.value));
+                const found = ELEMENTS_DATA.find((item) => item.number === Number(e.target.value));
                 if (found) onSelectElement2(found);
               }}
-              className="w-full p-2 sm:p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs sm:text-sm font-medium focus:ring-2 focus:ring-cyan-500 focus:outline-none truncate"
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs font-bold text-white focus:outline-none focus:border-violet-400 cursor-pointer"
             >
-              {ELEMENTS_DATA.map((el) => (
-                <option key={el.number} value={el.number}>
-                  #{el.number} {el.name} ({el.symbol})
+              {ELEMENTS_DATA.map((elem) => (
+                <option key={elem.number} value={elem.number}>
+                  #{elem.number} {elem.symbol} — {elem.name}
                 </option>
               ))}
             </select>
-
-            <div className="mt-2.5 flex items-center gap-2 sm:gap-3 min-w-0">
-              <div
-                className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center font-bold text-lg sm:text-xl border shadow-sm shrink-0"
-                style={{ backgroundColor: `${cat2.color}25`, borderColor: cat2.color, color: cat2.color }}
-              >
-                {e2.symbol}
-              </div>
-              <div className="min-w-0 truncate">
-                <h3 className="font-bold text-sm sm:text-base leading-tight truncate">{e2.name}</h3>
-                <span className="text-[10.5px] sm:text-xs text-slate-400 block truncate">
-                  {e2.categoryName} • P{e2.period} G{e2.group}
-                </span>
-              </div>
-            </div>
           </div>
+
+          {/* Element 3 Selector (Optional) */}
+          {showThird && (
+            <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono uppercase text-amber-400 font-bold">Slot 3</span>
+                <span className="text-[10px] font-mono text-slate-400">Z = {e3.number}</span>
+              </div>
+              <select
+                value={e3.number}
+                onChange={(e) => {
+                  const found = ELEMENTS_DATA.find((item) => item.number === Number(e.target.value));
+                  if (found) setElement3(found);
+                }}
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs font-bold text-white focus:outline-none focus:border-amber-400 cursor-pointer"
+              >
+                {ELEMENTS_DATA.map((elem) => (
+                  <option key={elem.number} value={elem.number}>
+                    #{elem.number} {elem.symbol} — {elem.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
-        {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
-          {/* Visual Bar Comparison Section */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
-              <BarChart2 size={15} className="text-cyan-400" />
-              <span>Comparative Property Bars</span>
-            </div>
+        {/* Comparison Content */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6" style={{ scrollbarWidth: 'thin' }}>
+          {/* Visual Property Comparison Bars */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
+            <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-cyan-400">
+              Visual Metric Comparison
+            </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {visualMetrics.map((m, idx) => {
-                const maxVal = Math.max(m.val1 || 0, m.val2 || 0) || 1;
-                const p1 = m.val1 !== null ? Math.round(((m.val1 || 0) / maxVal) * 100) : 0;
-                const p2 = m.val2 !== null ? Math.round(((m.val2 || 0) / maxVal) * 100) : 0;
+            <div className="space-y-4">
+              {visualMetrics.map((metric, idx) => {
+                const vals = [metric.val1, metric.val2, showThird ? metric.val3 : null].filter(
+                  (v): v is number => typeof v === 'number' && !isNaN(v) && v > 0
+                );
+                const maxVal = vals.length > 0 ? Math.max(...vals) : 1;
+
+                const pct1 = typeof metric.val1 === 'number' && metric.val1 > 0 ? (metric.val1 / maxVal) * 100 : 0;
+                const pct2 = typeof metric.val2 === 'number' && metric.val2 > 0 ? (metric.val2 / maxVal) * 100 : 0;
+                const pct3 = typeof metric.val3 === 'number' && metric.val3 > 0 ? (metric.val3 / maxVal) * 100 : 0;
 
                 return (
-                  <div
-                    key={idx}
-                    className={`p-3 rounded-xl border ${
-                      darkMode ? 'bg-slate-950/40 border-slate-800' : 'bg-slate-50 border-slate-200'
-                    }`}
-                  >
-                    <div className="text-[11px] font-bold text-slate-300 mb-2">{m.name}</div>
-
-                    {/* Element 1 Bar */}
-                    <div className="space-y-1 mb-2">
-                      <div className="flex items-center justify-between text-[10px]">
-                        <span className="font-bold" style={{ color: cat1.color }}>{e1.symbol} ({e1.name}):</span>
-                        <span className="font-mono text-slate-300">{m.fmt1}</span>
-                      </div>
-                      <div className="w-full h-2 rounded-full bg-black/30 overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all duration-300"
-                          style={{
-                            width: `${m.val1 !== null ? Math.max(4, p1) : 0}%`,
-                            backgroundColor: cat1.color,
-                          }}
-                        />
+                  <div key={idx} className="space-y-1.5">
+                    <div className="flex justify-between text-xs font-mono">
+                      <span className="font-semibold text-white">{metric.name}</span>
+                      <div className="flex items-center gap-3 text-[11px]">
+                        <span className="text-cyan-400 font-bold">{e1.symbol}: {metric.fmt1}</span>
+                        <span className="text-violet-400 font-bold">{e2.symbol}: {metric.fmt2}</span>
+                        {showThird && <span className="text-amber-400 font-bold">{e3.symbol}: {metric.fmt3}</span>}
                       </div>
                     </div>
 
-                    {/* Element 2 Bar */}
                     <div className="space-y-1">
-                      <div className="flex items-center justify-between text-[10px]">
-                        <span className="font-bold" style={{ color: cat2.color }}>{e2.symbol} ({e2.name}):</span>
-                        <span className="font-mono text-slate-300">{m.fmt2}</span>
-                      </div>
-                      <div className="w-full h-2 rounded-full bg-black/30 overflow-hidden">
+                      {/* Bar 1 */}
+                      <div className="h-2 rounded-full bg-slate-950 overflow-hidden flex">
                         <div
-                          className="h-full rounded-full transition-all duration-300"
-                          style={{
-                            width: `${m.val2 !== null ? Math.max(4, p2) : 0}%`,
-                            backgroundColor: cat2.color,
-                          }}
+                          className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-teal-400 transition-all duration-300 shadow-[0_0_8px_rgba(6,182,212,0.4)]"
+                          style={{ width: `${Math.max(3, pct1)}%` }}
                         />
                       </div>
+                      {/* Bar 2 */}
+                      <div className="h-2 rounded-full bg-slate-950 overflow-hidden flex">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-violet-500 to-purple-400 transition-all duration-300 shadow-[0_0_8px_rgba(139,92,246,0.4)]"
+                          style={{ width: `${Math.max(3, pct2)}%` }}
+                        />
+                      </div>
+                      {/* Bar 3 */}
+                      {showThird && (
+                        <div className="h-2 rounded-full bg-slate-950 overflow-hidden flex">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-400 transition-all duration-300 shadow-[0_0_8px_rgba(245,158,11,0.4)]"
+                            style={{ width: `${Math.max(3, pct3)}%` }}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -272,57 +319,46 @@ export const CompareModal: React.FC<CompareModalProps> = ({
             </div>
           </div>
 
-          {/* Detailed Property Table */}
-          <div className="space-y-2">
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Detailed Chemical & Physical Data
-            </div>
-
-            <div className="overflow-hidden rounded-xl border border-white/10">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className={darkMode ? 'bg-slate-800/80 text-slate-300' : 'bg-slate-100 text-slate-700'}>
-                    <th className="p-3 font-semibold uppercase tracking-wider text-[10px] w-1/3">Property</th>
-                    <th className="p-3 font-semibold uppercase tracking-wider text-[10px] w-1/3">
-                      {e1.name} ({e1.symbol})
+          {/* Properties Table */}
+          <div className="rounded-2xl border border-slate-800 overflow-hidden">
+            <table className="w-full text-xs font-sans text-left">
+              <thead>
+                <tr className="bg-slate-900 border-b border-slate-800 font-mono text-[11px] text-slate-400 uppercase">
+                  <th className="py-3 px-4">Property</th>
+                  <th className="py-3 px-4 text-cyan-400 font-bold">
+                    {e1.symbol} ({e1.name})
+                  </th>
+                  <th className="py-3 px-4 text-violet-400 font-bold">
+                    {e2.symbol} ({e2.name})
+                  </th>
+                  {showThird && (
+                    <th className="py-3 px-4 text-amber-400 font-bold">
+                      {e3.symbol} ({e3.name})
                     </th>
-                    <th className="p-3 font-semibold uppercase tracking-wider text-[10px] w-1/3">
-                      {e2.name} ({e2.symbol})
-                    </th>
+                  )}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/80 bg-slate-950/60 font-mono">
+                {rows.map((r, i) => (
+                  <tr key={i} className="hover:bg-slate-900/40 transition-colors">
+                    <td className="py-2.5 px-4 font-sans font-medium text-slate-400">
+                      {r.label}
+                    </td>
+                    <td className="py-2.5 px-4 text-white font-semibold">
+                      <span style={{ color: r.color1 }}>{r.v1}</span>
+                    </td>
+                    <td className="py-2.5 px-4 text-white font-semibold">
+                      <span style={{ color: r.color2 }}>{r.v2}</span>
+                    </td>
+                    {showThird && (
+                      <td className="py-2.5 px-4 text-white font-semibold">
+                        <span style={{ color: r.color3 }}>{r.v3}</span>
+                      </td>
+                    )}
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {rows.map((row, idx) => (
-                    <tr
-                      key={idx}
-                      className={`transition-colors ${
-                        idx % 2 === 0
-                          ? darkMode
-                            ? 'bg-slate-900/40'
-                            : 'bg-white'
-                          : darkMode
-                          ? 'bg-slate-800/20'
-                          : 'bg-slate-50'
-                      } hover:bg-cyan-500/10`}
-                    >
-                      <td className="p-3 text-slate-400 font-medium">{row.label}</td>
-                      <td
-                        className={`p-3 ${row.mono ? 'font-mono' : ''} ${row.capitalize ? 'capitalize' : ''}`}
-                        style={{ color: row.color1 }}
-                      >
-                        {row.v1}
-                      </td>
-                      <td
-                        className={`p-3 ${row.mono ? 'font-mono' : ''} ${row.capitalize ? 'capitalize' : ''}`}
-                        style={{ color: row.color2 }}
-                      >
-                        {row.v2}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

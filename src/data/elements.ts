@@ -50,112 +50,112 @@ export const CATEGORIES: Record<string, CategoryInfo> = {
   'alkali-metal': {
     id: 'alkali-metal',
     name: 'Alkali Metal',
-    color: '#ef4444',
-    borderColor: 'border-red-500/40',
-    bgLight: 'bg-red-50 hover:bg-red-100',
-    bgDark: 'bg-red-950/30 hover:bg-red-900/40 border-red-500/30',
-    textLight: 'text-red-700',
-    textDark: 'text-red-300',
-    dotColor: '#ef4444'
-  },
-  'alkaline-earth': {
-    id: 'alkaline-earth',
-    name: 'Alkaline Earth',
-    color: '#f97316',
-    borderColor: 'border-orange-500/40',
-    bgLight: 'bg-orange-50 hover:bg-orange-100',
-    bgDark: 'bg-orange-950/30 hover:bg-orange-900/40 border-orange-500/30',
-    textLight: 'text-orange-700',
-    textDark: 'text-orange-300',
-    dotColor: '#f97316'
-  },
-  'transition-metal': {
-    id: 'transition-metal',
-    name: 'Transition Metal',
-    color: '#eab308',
-    borderColor: 'border-yellow-500/40',
-    bgLight: 'bg-yellow-50 hover:bg-yellow-100',
-    bgDark: 'bg-yellow-950/30 hover:bg-yellow-900/40 border-yellow-500/30',
-    textLight: 'text-yellow-700',
-    textDark: 'text-yellow-300',
-    dotColor: '#eab308'
-  },
-  'post-transition-metal': {
-    id: 'post-transition-metal',
-    name: 'Post-Transition Metal',
-    color: '#10b981',
-    borderColor: 'border-emerald-500/40',
-    bgLight: 'bg-emerald-50 hover:bg-emerald-100',
-    bgDark: 'bg-emerald-950/30 hover:bg-emerald-900/40 border-emerald-500/30',
-    textLight: 'text-emerald-700',
-    textDark: 'text-emerald-300',
-    dotColor: '#10b981'
-  },
-  'metalloid': {
-    id: 'metalloid',
-    name: 'Metalloid',
-    color: '#06b6d4',
-    borderColor: 'border-cyan-500/40',
-    bgLight: 'bg-cyan-50 hover:bg-cyan-100',
-    bgDark: 'bg-cyan-950/30 hover:bg-cyan-900/40 border-cyan-500/30',
-    textLight: 'text-cyan-700',
-    textDark: 'text-cyan-300',
-    dotColor: '#06b6d4'
-  },
-  'reactive-nonmetal': {
-    id: 'reactive-nonmetal',
-    name: 'Reactive Nonmetal',
-    color: '#3b82f6',
-    borderColor: 'border-blue-500/40',
-    bgLight: 'bg-blue-50 hover:bg-blue-100',
-    bgDark: 'bg-blue-950/30 hover:bg-blue-900/40 border-blue-500/30',
-    textLight: 'text-blue-700',
-    textDark: 'text-blue-300',
-    dotColor: '#3b82f6'
-  },
-  'noble-gas': {
-    id: 'noble-gas',
-    name: 'Noble Gas',
-    color: '#8b5cf6',
-    borderColor: 'border-purple-500/40',
-    bgLight: 'bg-purple-50 hover:bg-purple-100',
-    bgDark: 'bg-purple-950/30 hover:bg-purple-900/40 border-purple-500/30',
-    textLight: 'text-purple-700',
-    textDark: 'text-purple-300',
-    dotColor: '#8b5cf6'
-  },
-  'lanthanide': {
-    id: 'lanthanide',
-    name: 'Lanthanide',
-    color: '#ec4899',
-    borderColor: 'border-pink-500/40',
-    bgLight: 'bg-pink-50 hover:bg-pink-100',
-    bgDark: 'bg-pink-950/30 hover:bg-pink-900/40 border-pink-500/30',
-    textLight: 'text-pink-700',
-    textDark: 'text-pink-300',
-    dotColor: '#ec4899'
-  },
-  'actinide': {
-    id: 'actinide',
-    name: 'Actinide',
-    color: '#f43f5e',
-    borderColor: 'border-rose-500/40',
+    color: '#F87171',
+    borderColor: 'border-rose-300',
     bgLight: 'bg-rose-50 hover:bg-rose-100',
     bgDark: 'bg-rose-950/30 hover:bg-rose-900/40 border-rose-500/30',
     textLight: 'text-rose-700',
     textDark: 'text-rose-300',
-    dotColor: '#f43f5e'
+    dotColor: '#F87171'
+  },
+  'alkaline-earth': {
+    id: 'alkaline-earth',
+    name: 'Alkaline Earth',
+    color: '#FB923C',
+    borderColor: 'border-orange-300',
+    bgLight: 'bg-orange-50 hover:bg-orange-100',
+    bgDark: 'bg-orange-950/30 hover:bg-orange-900/40 border-orange-500/30',
+    textLight: 'text-orange-700',
+    textDark: 'text-orange-300',
+    dotColor: '#FB923C'
+  },
+  'transition-metal': {
+    id: 'transition-metal',
+    name: 'Transition Metal',
+    color: '#A78BFA',
+    borderColor: 'border-purple-300',
+    bgLight: 'bg-purple-50 hover:bg-purple-100',
+    bgDark: 'bg-purple-950/30 hover:bg-purple-900/40 border-purple-500/30',
+    textLight: 'text-purple-700',
+    textDark: 'text-purple-300',
+    dotColor: '#A78BFA'
+  },
+  'post-transition-metal': {
+    id: 'post-transition-metal',
+    name: 'Post-Transition Metal',
+    color: '#94A3B8',
+    borderColor: 'border-slate-300',
+    bgLight: 'bg-slate-100 hover:bg-slate-200',
+    bgDark: 'bg-slate-900/40 hover:bg-slate-800/40 border-slate-500/30',
+    textLight: 'text-slate-700',
+    textDark: 'text-slate-300',
+    dotColor: '#94A3B8'
+  },
+  'metalloid': {
+    id: 'metalloid',
+    name: 'Metalloid',
+    color: '#34D399',
+    borderColor: 'border-emerald-300',
+    bgLight: 'bg-emerald-50 hover:bg-emerald-100',
+    bgDark: 'bg-emerald-950/30 hover:bg-emerald-900/40 border-emerald-500/30',
+    textLight: 'text-emerald-700',
+    textDark: 'text-emerald-300',
+    dotColor: '#34D399'
+  },
+  'reactive-nonmetal': {
+    id: 'reactive-nonmetal',
+    name: 'Reactive Nonmetal',
+    color: '#4ADE80',
+    borderColor: 'border-green-300',
+    bgLight: 'bg-green-50 hover:bg-green-100',
+    bgDark: 'bg-green-950/30 hover:bg-green-900/40 border-green-500/30',
+    textLight: 'text-green-700',
+    textDark: 'text-green-300',
+    dotColor: '#4ADE80'
+  },
+  'noble-gas': {
+    id: 'noble-gas',
+    name: 'Noble Gas',
+    color: '#C084FC',
+    borderColor: 'border-violet-300',
+    bgLight: 'bg-violet-50 hover:bg-violet-100',
+    bgDark: 'bg-violet-950/30 hover:bg-violet-900/40 border-violet-500/30',
+    textLight: 'text-violet-700',
+    textDark: 'text-violet-300',
+    dotColor: '#C084FC'
+  },
+  'lanthanide': {
+    id: 'lanthanide',
+    name: 'Lanthanide',
+    color: '#F472B6',
+    borderColor: 'border-pink-300',
+    bgLight: 'bg-pink-50 hover:bg-pink-100',
+    bgDark: 'bg-pink-950/30 hover:bg-pink-900/40 border-pink-500/30',
+    textLight: 'text-pink-700',
+    textDark: 'text-pink-300',
+    dotColor: '#F472B6'
+  },
+  'actinide': {
+    id: 'actinide',
+    name: 'Actinide',
+    color: '#FB7185',
+    borderColor: 'border-rose-300',
+    bgLight: 'bg-rose-50 hover:bg-rose-100',
+    bgDark: 'bg-rose-950/30 hover:bg-rose-900/40 border-rose-500/30',
+    textLight: 'text-rose-700',
+    textDark: 'text-rose-300',
+    dotColor: '#FB7185'
   },
   'unknown': {
     id: 'unknown',
     name: 'Unknown Properties',
-    color: '#64748b',
-    borderColor: 'border-slate-500/40',
-    bgLight: 'bg-slate-50 hover:bg-slate-100',
+    color: '#CBD5E1',
+    borderColor: 'border-slate-300',
+    bgLight: 'bg-slate-100 hover:bg-slate-200',
     bgDark: 'bg-slate-900/40 hover:bg-slate-800/40 border-slate-600/30',
-    textLight: 'text-slate-700',
+    textLight: 'text-slate-600',
     textDark: 'text-slate-300',
-    dotColor: '#64748b'
+    dotColor: '#CBD5E1'
   }
 };
 

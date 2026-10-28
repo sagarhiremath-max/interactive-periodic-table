@@ -7,6 +7,8 @@ interface BohrModelProps {
   atomicNumber: number;
   categoryColor?: string;
   size?: number;
+  darkMode?: boolean;
+  hideBreakdown?: boolean;
 }
 
 export const BohrModel: React.FC<BohrModelProps> = ({
@@ -15,6 +17,8 @@ export const BohrModel: React.FC<BohrModelProps> = ({
   atomicNumber,
   categoryColor = '#06b6d4',
   size = 280,
+  darkMode = false,
+  hideBreakdown = false,
 }) => {
   // Check user system preference for reduced motion
   const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(() => {
@@ -72,7 +76,7 @@ export const BohrModel: React.FC<BohrModelProps> = ({
             cy={center}
             r={maxRadius}
             fill="none"
-            stroke="rgba(255, 255, 255, 0.05)"
+            stroke={darkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)'}
             strokeDasharray="4 4"
           />
 
@@ -96,7 +100,7 @@ export const BohrModel: React.FC<BohrModelProps> = ({
                   cy={center}
                   r={radius}
                   fill="none"
-                  stroke="rgba(255, 255, 255, 0.16)"
+                  stroke={darkMode ? 'rgba(255, 255, 255, 0.22)' : 'rgba(0, 0, 0, 0.16)'}
                   strokeWidth="1.2"
                 />
 
@@ -104,7 +108,7 @@ export const BohrModel: React.FC<BohrModelProps> = ({
                 <text
                   x={center + radius - 4}
                   y={center - 3}
-                  fill="rgba(255, 255, 255, 0.4)"
+                  fill={darkMode ? 'rgba(255, 255, 255, 0.55)' : 'rgba(0, 0, 0, 0.45)'}
                   fontSize="8"
                   fontFamily="monospace"
                   textAnchor="end"
@@ -196,13 +200,13 @@ export const BohrModel: React.FC<BohrModelProps> = ({
         </svg>
 
         {/* Play / Pause toggle & Reduced Motion status */}
-        <div className="absolute bottom-1 right-1 flex items-center gap-1.5">
+        <div className="absolute bottom-1 right-1 flex items-center gap-1.5 font-mono">
           {prefersReducedMotion && (
             <span
-              className="text-[10px] flex items-center gap-1 text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-full border border-white/10"
+              className="text-[10px] flex items-center gap-1 text-black bg-[#FFE600] px-2 py-0.5 border border-black shadow-[1px_1px_0px_#000] font-bold uppercase"
               title="System prefers reduced motion"
             >
-              <EyeOff size={10} /> Reduced Motion
+              <EyeOff size={10} strokeWidth={2.5} /> REDUCED MOTION
             </span>
           )}
           <button
@@ -210,44 +214,50 @@ export const BohrModel: React.FC<BohrModelProps> = ({
             onClick={() => setIsPlaying(!isPlaying)}
             title={isPlaying ? 'Pause orbit animation' : 'Play orbit animation'}
             aria-label={isPlaying ? 'Pause orbit animation' : 'Play orbit animation'}
-            className="p-1.5 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors border border-white/10 shadow-sm"
+            className="p-1.5 border-2 border-black bg-[#FFE600] text-black shadow-[2px_2px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 transition-all cursor-pointer"
           >
-            {isPlaying ? <Pause size={12} /> : <Play size={12} />}
+            {isPlaying ? <Pause size={12} strokeWidth={3} /> : <Play size={12} strokeWidth={3} />}
           </button>
         </div>
       </div>
 
-      {/* Shell electrons breakdown */}
-      <div className="mt-3 w-full flex flex-col items-center gap-2">
-        <div className="flex items-center gap-1.5 flex-wrap justify-center text-xs">
-          <span className="text-slate-400 font-semibold text-[11px] mr-1">Shells (e⁻):</span>
-          {shells.map((count, idx) => (
-            <span
-              key={idx}
-              className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-slate-300 font-mono text-[11px] flex items-center gap-1"
-              title={`Shell ${shellLabels[idx] || idx + 1}: ${count} electrons`}
-            >
-              <span className="text-slate-400">{shellLabels[idx] || idx + 1}:</span>
-              <strong className="text-cyan-300">{count}</strong>
+      {/* Shell electrons breakdown (optional) */}
+      {!hideBreakdown && (
+        <div className="mt-3 w-full flex flex-col items-center gap-2 font-mono">
+          <div className="flex items-center gap-1.5 flex-wrap justify-center text-xs">
+            <span className="font-black uppercase text-[10px] mr-1 text-black dark:text-[#FFE600]">
+              SHELLS (e⁻):
             </span>
-          ))}
-        </div>
+            {shells.map((count, idx) => (
+              <span
+                key={idx}
+                className="px-2 py-0.5 border border-black dark:border-white font-mono text-[11px] font-bold bg-white dark:bg-black text-black dark:text-white shadow-[1px_1px_0px_#000] flex items-center gap-1"
+                title={`Shell ${shellLabels[idx] || idx + 1}: ${count} electrons`}
+              >
+                <span className="text-neutral-500">
+                  {shellLabels[idx] || idx + 1}:
+                </span>
+                <strong className="text-black dark:text-[#FFE600] font-black">{count}</strong>
+              </span>
+            ))}
+          </div>
 
-        {/* Summary stats: Total & Valence electrons */}
-        <div className="flex items-center gap-3 text-[11px] text-slate-400 font-medium">
-          <span>
-            Total: <strong className="text-white">{totalElectrons} e⁻</strong>
-          </span>
-          <span>•</span>
-          <span>
-            Valence: <strong className="text-cyan-400">{valenceElectrons} e⁻</strong>
-          </span>
-          <span>•</span>
-          <span>
-            Shells: <strong className="text-white">{shellCount}</strong>
-          </span>
+          {/* Summary stats: Total & Valence electrons */}
+          <div className="flex items-center gap-3 text-[11px] font-mono font-bold uppercase text-neutral-700 dark:text-neutral-300">
+            <span>
+              TOTAL: <strong className="text-black dark:text-white font-black">{totalElectrons} e⁻</strong>
+            </span>
+            <span>•</span>
+            <span>
+              VALENCE: <strong className="text-[#FF007A] font-black">{valenceElectrons} e⁻</strong>
+            </span>
+            <span>•</span>
+            <span>
+              SHELLS: <strong className="text-black dark:text-white font-black">{shellCount}</strong>
+            </span>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

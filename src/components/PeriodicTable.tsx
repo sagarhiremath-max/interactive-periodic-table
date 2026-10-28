@@ -2,7 +2,8 @@ import React, { useRef } from 'react';
 import type { ElementData } from '../data/elements';
 import { ElementCell } from './ElementCell';
 import type { TrendType } from '../data/trends';
-import { ChevronsLeftRight, SearchX, RotateCcw } from 'lucide-react';
+import { ChevronsLeftRight, SearchX, RotateCcw, Maximize2 } from 'lucide-react';
+import { getStateAtTemperature } from '../utils/helpers';
 
 interface PeriodicTableProps {
   elements: ElementData[];
@@ -10,8 +11,9 @@ interface PeriodicTableProps {
   hoveredElement: ElementData | null;
   hoveredCategory: string | null;
   selectedCategory: string;
-  selectedBlock: string;
-  selectedStateFilter: string;
+  activeClassification: 'all' | 'metals' | 'nonmetals' | 'metalloids';
+  activeStateFilter: 'all' | 'solid' | 'liquid' | 'gas';
+  atomicRange: [number, number];
   searchQuery: string;
   layoutMode: 'standard' | 'extended';
   temperatureKelvin: number;
@@ -22,17 +24,19 @@ interface PeriodicTableProps {
   onSelectElement: (element: ElementData) => void;
   onHoverElement: (element: ElementData | null, e?: React.MouseEvent<HTMLDivElement>) => void;
   onSelectCategory: (catId: string) => void;
-  onClearSearch?: () => void;
+  onResetAllFilters?: () => void;
+  onOpenFitView?: () => void;
 }
 
 export const PeriodicTable: React.FC<PeriodicTableProps> = ({
   elements,
   selectedElement,
-  hoveredElement,
+  hoveredElement: _hoveredElement,
   hoveredCategory,
   selectedCategory,
-  selectedBlock,
-  selectedStateFilter,
+  activeClassification,
+  activeStateFilter,
+  atomicRange,
   searchQuery,
   layoutMode,
   temperatureKelvin,
@@ -42,55 +46,64 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
   isFavorite,
   onSelectElement,
   onHoverElement,
-  onSelectCategory,
-  onClearSearch,
+  onSelectCategory: _onSelectCategory,
+  onResetAllFilters,
+  onOpenFitView,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-
   const cleanQuery = searchQuery.trim().toLowerCase();
 
-  // Helper to determine whether an element matches current active filters
+  // Element matching predicate
   const isElementMatching = (el: ElementData): boolean => {
-    // 1. Only Favorites filter
+    // 1. Favorites
     if (onlyFavorites && !isFavorite(el.number)) {
       return false;
     }
 
-    // 2. Search Query (name, symbol, or atomic number)
+    // 2. Search
     if (cleanQuery) {
       const matchName = el.name.toLowerCase().includes(cleanQuery);
-      const matchSymbol = el.symbol.toLowerCase() === cleanQuery || el.symbol.toLowerCase().startsWith(cleanQuery);
+      const matchSymbol =
+        el.symbol.toLowerCase() === cleanQuery ||
+        el.symbol.toLowerCase().startsWith(cleanQuery);
       const matchNum = `${el.number}` === cleanQuery;
       if (!matchName && !matchSymbol && !matchNum) return false;
     }
 
-    // 3. Category selection
+    // 3. Category Filter
     if (selectedCategory !== 'all') {
-      if (selectedCategory === 'metals' && !el.isMetal) return false;
-      if (selectedCategory === 'nonmetals' && !el.isNonmetal) return false;
-      if (selectedCategory === 'metalloids' && !el.isMetalloid) return false;
-      if (selectedCategory === 'halogens' && !el.isHalogen) return false;
-      if (
-        !['metals', 'nonmetals', 'metalloids', 'halogens'].includes(selectedCategory) &&
-        el.category !== selectedCategory
-      ) {
+      if (selectedCategory === 'halogen') {
+        if (!el.isHalogen) return false;
+      } else if (el.category !== selectedCategory) {
         return false;
       }
     }
 
-    // 4. Block selection
-    if (selectedBlock !== 'all' && el.block !== selectedBlock) {
+    // 4. Classification Filter
+    if (activeClassification !== 'all') {
+      if (activeClassification === 'metals' && !el.isMetal) return false;
+      if (activeClassification === 'nonmetals' && !el.isNonmetal) return false;
+      if (activeClassification === 'metalloids' && !el.isMetalloid) return false;
+    }
+
+    // 5. State Filter
+    if (activeStateFilter !== 'all') {
+      const state = getStateAtTemperature(el, temperatureKelvin);
+      if (state !== activeStateFilter) return false;
+    }
+
+    // 6. Atomic Range
+    if (el.number < atomicRange[0] || el.number > atomicRange[1]) {
       return false;
     }
 
-    // 5. State filter
-    if (selectedStateFilter !== 'all' && el.standardState !== selectedStateFilter) {
-      return false;
-    }
-
-    // 6. Legend hover
-    if (hoveredCategory && el.category !== hoveredCategory) {
-      return false;
+    // 7. Hovered Category temporarily dims others
+    if (hoveredCategory) {
+      if (hoveredCategory === 'halogen') {
+        if (!el.isHalogen) return false;
+      } else if (el.category !== hoveredCategory) {
+        return false;
+      }
     }
 
     return true;
@@ -101,8 +114,9 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
   const hasAnyFilter =
     Boolean(cleanQuery) ||
     selectedCategory !== 'all' ||
-    selectedBlock !== 'all' ||
-    selectedStateFilter !== 'all' ||
+    activeClassification !== 'all' ||
+    activeStateFilter !== 'all' ||
+    atomicRange[1] < 118 ||
     onlyFavorites ||
     Boolean(hoveredCategory);
 
@@ -130,215 +144,214 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
   const periods = [1, 2, 3, 4, 5, 6, 7];
 
   return (
-    <div className="relative w-full h-full flex-1 min-h-0 flex flex-col justify-between">
-      {/* Top info bar */}
-      <div className="flex items-center justify-between pb-1 px-1 text-[11px] text-slate-400 shrink-0">
-        <div className="flex items-center gap-1.5 flex-wrap">
+    <div className="relative w-full flex flex-col justify-between">
+      {/* Table Subtitle Bar */}
+      <div className="flex items-center justify-between pb-2 text-[11px] font-mono text-slate-400 gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           <span>
-            Layout: <strong className="text-white capitalize">{layoutMode}</strong>
+            Layout: <strong className="text-cyan-400 capitalize">{layoutMode}</strong>
           </span>
           <span>•</span>
-          <span className="hidden sm:inline">
-            Click any element for Bohr model, properties & applications
+          <span className="hidden sm:inline text-slate-300">
+            Click any element to inspect Bohr model, orbitals & thermals
           </span>
         </div>
 
-        {/* Mobile scroll hint */}
-        <div className="flex items-center gap-1 text-[10px] text-cyan-400 lg:hidden animate-pulse">
-          <ChevronsLeftRight size={12} />
-          <span>Scroll horizontally</span>
+        <div className="flex items-center gap-2 flex-wrap">
+          {onResetAllFilters && (
+            <button
+              type="button"
+              onClick={onResetAllFilters}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-rose-300 bg-slate-800/80 hover:bg-rose-950/60 border border-slate-700 hover:border-rose-500/50 shadow-sm transition-all cursor-pointer"
+              title="Reset every selection, filter, search, and active element"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+              <span>Reset All</span>
+            </button>
+          )}
+
+          {onOpenFitView && (
+            <button
+              type="button"
+              onClick={onOpenFitView}
+              className="relative inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-black text-slate-950 bg-gradient-to-r from-cyan-400 via-teal-300 to-cyan-300 hover:from-cyan-300 hover:to-teal-200 border-2 border-cyan-100 shadow-[0_0_25px_rgba(34,211,238,0.7)] hover:shadow-[0_0_35px_rgba(34,211,238,0.9)] ring-2 ring-cyan-400/50 transition-all cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0 animate-pulse"
+              title="Show the complete periodic table fitted to screen without any scrolling"
+            >
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-slate-950 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-slate-950"></span>
+              </span>
+              <Maximize2 className="w-4 h-4 text-slate-950" strokeWidth={2.8} />
+              <span className="uppercase tracking-tight">Show Complete Table (No Scroll)</span>
+            </button>
+          )}
+
+          <div className="flex items-center gap-1.5 text-[10px] text-cyan-400 lg:hidden font-medium">
+            <ChevronsLeftRight className="w-3.5 h-3.5 animate-pulse" />
+            <span>Scroll horizontally</span>
+          </div>
         </div>
       </div>
 
-      {/* Empty Search / Filter Results Message */}
+      {/* Empty Search / Filter Results State */}
       {hasAnyFilter && matchingCount === 0 && (
-        <div
-          className={`my-2 p-4 rounded-xl border text-center space-y-2 max-w-md mx-auto shrink-0 ${
-            darkMode
-              ? 'bg-slate-900/90 border-slate-700 text-slate-200'
-              : 'bg-white border-slate-200 text-slate-800 shadow-sm'
-          }`}
-        >
-          <SearchX className="mx-auto text-cyan-400" size={28} />
-          <h4 className="text-xs sm:text-sm font-bold">
-            No elements match your active filters {cleanQuery ? `(“${searchQuery}”)` : ''}
+        <div className="my-6 p-8 rounded-2xl bg-slate-900/80 border border-cyan-500/30 text-center space-y-3 max-w-md mx-auto backdrop-blur-md shadow-2xl">
+          <SearchX className="mx-auto text-cyan-400" size={40} />
+          <h4 className="text-base font-bold text-white uppercase font-mono">
+            No Elements Match Criteria
           </h4>
-          <p className="text-[11px] text-slate-400 leading-relaxed">
-            Try adjusting your search query, block, category, or phase filters to view elements.
+          <p className="text-xs text-slate-300 leading-relaxed font-sans">
+            No element found matching {cleanQuery ? `"${searchQuery}"` : 'the active filters'}.
+            Try relaxing category, atomic range, or thermodynamic constraints.
           </p>
-          {onClearSearch && (
+          {onResetAllFilters && (
             <button
               type="button"
-              onClick={onClearSearch}
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition-colors"
+              onClick={onResetAllFilters}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30 transition-all cursor-pointer shadow-sm"
             >
-              <RotateCcw size={12} />
+              <RotateCcw className="w-3.5 h-3.5" />
               <span>Reset All Filters</span>
             </button>
           )}
         </div>
       )}
 
-      {/* Overflow scroll container on mobile and compact displays, full-fit on large screens */}
+      {/* Main Grid Container with horizontal scrollbar styling */}
       <div
         ref={containerRef}
-        className="w-full flex-1 min-h-0 flex flex-col overflow-x-auto overflow-y-auto rounded-xl transition-all border border-transparent focus-within:border-cyan-500/30"
+        className="w-full overflow-x-auto rounded-2xl border border-slate-800/80 bg-slate-950/40 p-2 sm:p-3 shadow-inner"
         style={{ scrollbarWidth: 'thin' }}
         tabIndex={0}
         aria-label="Interactive periodic table of elements grid"
       >
         <div
           style={{
-            minWidth: layoutMode === 'extended' ? '1420px' : '720px',
-            transition: 'transform 0.15s ease-out',
+            minWidth: layoutMode === 'extended' ? '1480px' : '960px',
           }}
-          className="h-full flex-1 min-h-0 flex flex-col justify-between"
+          className="w-full flex flex-col"
         >
-          {/* Standard layout Group Headers (1 to 18) above the grid */}
+          {/* Group Column Headers (1 to 18) for Standard Layout */}
           {layoutMode === 'standard' && (
             <div
-              className="grid gap-0.5 sm:gap-1 pb-1 text-[9px] font-mono text-slate-400 text-center select-none shrink-0"
+              className="grid gap-1 pb-1.5 text-[9px] font-mono text-center select-none"
               style={{
-                gridTemplateColumns: 'repeat(18, minmax(36px, 1fr))',
-                paddingLeft: '18px',
+                gridTemplateColumns: 'repeat(18, minmax(48px, 1fr))',
+                paddingLeft: '22px',
               }}
             >
               {groupLabelsStandard.map((grp) => (
-                <div key={grp.num} className="flex flex-col items-center leading-none">
-                  <span className="font-bold text-slate-400 text-[9px]">{grp.num}</span>
-                  <span className="text-[7.5px] text-slate-500 leading-none">{grp.iupac.split(' ')[1]}</span>
+                <div key={grp.num} className="flex flex-col items-center leading-tight">
+                  <span className="font-bold text-slate-300">{grp.num}</span>
+                  <span className="text-[7.5px] text-slate-400">{grp.iupac.split(' ')[1]}</span>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Main Grid: 18 columns standard or 32 columns extended with period labels */}
-          <div className="flex flex-row items-stretch h-full flex-1 min-h-0 w-full gap-1">
-            {/* Standard layout Period Headers (1 to 7) on the left */}
+          {/* Grid Layout: Periods on Left + Element Cells */}
+          <div className="flex flex-row items-stretch w-full gap-1.5">
+            {/* Period Numbers (1 to 7) */}
             {layoutMode === 'standard' && (
               <div
-                className="grid text-[10px] font-mono font-bold text-slate-500 text-center select-none shrink-0"
+                className="grid text-[10px] font-mono font-bold text-slate-400 text-center select-none shrink-0"
                 style={{
-                  gridTemplateRows: 'repeat(7, minmax(clamp(58px, 6.8vh, 78px), 1fr)) clamp(6px, 0.8vh, 12px) repeat(2, minmax(clamp(58px, 6.8vh, 78px), 1fr))',
-                  width: '14px',
+                  gridTemplateRows: 'repeat(7, minmax(64px, 1fr)) 12px repeat(2, minmax(64px, 1fr))',
+                  width: '18px',
                 }}
               >
                 {periods.map((p) => (
-                  <div key={`p-${p}`} style={{ gridRowStart: p }} className="flex items-center justify-center leading-none">
+                  <div key={`p-${p}`} style={{ gridRowStart: p }} className="flex items-center justify-center">
                     {p}
                   </div>
                 ))}
               </div>
             )}
 
+            {/* Elements Matrix Grid */}
             <div
-              className={`grid gap-0.5 sm:gap-1 relative h-full flex-1 min-h-0 ${
+              className={`grid gap-1 relative w-full ${
                 layoutMode === 'extended' ? 'grid-cols-32' : 'grid-cols-18'
               }`}
               style={{
                 gridTemplateColumns:
                   layoutMode === 'extended'
-                    ? 'repeat(32, minmax(36px, 1fr))'
-                    : 'repeat(18, minmax(36px, 1fr))',
+                    ? 'repeat(32, minmax(42px, 1fr))'
+                    : 'repeat(18, minmax(48px, 1fr))',
                 gridTemplateRows:
                   layoutMode === 'extended'
-                    ? 'repeat(7, minmax(clamp(58px, 6.8vh, 78px), 1fr))'
-                    : 'repeat(7, minmax(clamp(58px, 6.8vh, 78px), 1fr)) clamp(6px, 0.8vh, 12px) repeat(2, minmax(clamp(58px, 6.8vh, 78px), 1fr))',
+                    ? 'repeat(7, minmax(64px, 1fr))'
+                    : 'repeat(7, minmax(64px, 1fr)) 12px repeat(2, minmax(64px, 1fr))',
               }}
             >
+              {/* Lanthanide & Actinide Placeholders in Standard Grid (row 6 col 3 & row 7 col 3) */}
+              {layoutMode === 'standard' && (
+                <>
+                  <div
+                    style={{ gridColumnStart: 3, gridRowStart: 6 }}
+                    className="flex flex-col items-center justify-center p-1 rounded-lg border border-dashed border-pink-500/40 bg-pink-950/20 text-pink-300 font-mono text-center select-none"
+                  >
+                    <span className="text-[9px] font-bold">57-71</span>
+                    <span className="text-[8px] uppercase tracking-tighter">La-Lu</span>
+                  </div>
 
-            {/* Render all 118 Elements */}
-            {elements.map((el) => {
-              const matches = isElementMatching(el);
-              const isDimmed = hasAnyFilter && !matches;
-              const isSearchMatch = Boolean(cleanQuery && matches);
-              const isSelected = selectedElement?.number === el.number;
-              const isHovered = hoveredElement?.number === el.number;
+                  <div
+                    style={{ gridColumnStart: 3, gridRowStart: 7 }}
+                    className="flex flex-col items-center justify-center p-1 rounded-lg border border-dashed border-rose-500/40 bg-rose-950/20 text-rose-300 font-mono text-center select-none"
+                  >
+                    <span className="text-[9px] font-bold">89-103</span>
+                    <span className="text-[8px] uppercase tracking-tighter">Ac-Lr</span>
+                  </div>
 
-              return (
-                <ElementCell
-                  key={el.number}
-                  element={el}
-                  isSelected={isSelected}
-                  isHovered={isHovered}
-                  isDimmed={isDimmed}
-                  isSearchMatch={isSearchMatch}
-                  isFavorite={isFavorite(el.number)}
-                  layoutMode={layoutMode}
-                  temperatureKelvin={temperatureKelvin}
-                  darkMode={darkMode}
-                  trendMode={trendMode}
-                  onClick={onSelectElement}
-                  onMouseEnter={(element, e) => onHoverElement(element, e)}
-                  onMouseLeave={() => onHoverElement(null)}
-                />
-              );
-            })}
-
-            {/* Lanthanide & Actinide Placeholders in Standard Layout */}
-            {layoutMode === 'standard' && (
-              <>
-                {/* Lanthanides placeholder: Row 6, Col 3 */}
-                <button
-                  type="button"
-                  onClick={() => onSelectCategory('lanthanide')}
-                  style={{ gridColumnStart: 3, gridRowStart: 6 }}
-                  className="rounded-lg p-1 border border-pink-500/40 bg-pink-950/20 hover:bg-pink-900/40 text-pink-300 flex flex-col items-center justify-between text-center transition-all cursor-pointer hover:scale-105 h-full min-h-0 select-none box-border"
-                  title="Click to highlight Lanthanide series (57-71)"
-                >
-                  <span className="font-mono text-[clamp(7.5px,0.8vw,9.5px)] font-bold opacity-80 leading-none">57–71</span>
-                  <span className="font-extrabold text-[clamp(11px,1.2vw,14px)] leading-none my-auto">La–Lu</span>
-                  <span className="text-[clamp(6.5px,0.7vw,8px)] uppercase tracking-wider text-pink-400 font-bold leading-none truncate w-full px-0.5">
+                  {/* Lanthanide and Actinide series Row Labels at rows 9 and 10 */}
+                  <div
+                    style={{ gridColumnStart: 1, gridColumnEnd: 3, gridRowStart: 9 }}
+                    className="flex items-center justify-end pr-2 font-mono text-[9px] font-bold text-pink-400 select-none uppercase tracking-wider"
+                  >
                     Lanthanides
-                  </span>
-                </button>
+                  </div>
 
-                {/* Actinides placeholder: Row 7, Col 3 */}
-                <button
-                  type="button"
-                  onClick={() => onSelectCategory('actinide')}
-                  style={{ gridColumnStart: 3, gridRowStart: 7 }}
-                  className="rounded-lg p-1 border border-rose-500/40 bg-rose-950/20 hover:bg-rose-900/40 text-rose-300 flex flex-col items-center justify-between text-center transition-all cursor-pointer hover:scale-105 h-full min-h-0 select-none box-border"
-                  title="Click to highlight Actinide series (89-103)"
-                >
-                  <span className="font-mono text-[clamp(7.5px,0.8vw,9.5px)] font-bold opacity-80 leading-none">89–103</span>
-                  <span className="font-extrabold text-[clamp(11px,1.2vw,14px)] leading-none my-auto">Ac–Lr</span>
-                  <span className="text-[clamp(6.5px,0.7vw,8px)] uppercase tracking-wider text-rose-400 font-bold leading-none truncate w-full px-0.5">
+                  <div
+                    style={{ gridColumnStart: 1, gridColumnEnd: 3, gridRowStart: 10 }}
+                    className="flex items-center justify-end pr-2 font-mono text-[9px] font-bold text-fuchsia-400 select-none uppercase tracking-wider"
+                  >
                     Actinides
-                  </span>
-                </button>
+                  </div>
+                </>
+              )}
 
-                {/* Gap Row 8 Indicator / Spacer label */}
-                <div
-                  style={{ gridColumnStart: 1, gridRowStart: 8, gridColumnEnd: 19 }}
-                  className="flex items-center justify-center h-full min-h-0"
-                >
-                  <div className="w-full border-t border-dashed border-white/10" />
-                </div>
+              {/* Render all 118 Elements */}
+              {elements.map((el) => {
+                const matches = isElementMatching(el);
+                const isSearchMatch = Boolean(
+                  cleanQuery &&
+                    (el.name.toLowerCase().includes(cleanQuery) ||
+                      el.symbol.toLowerCase() === cleanQuery ||
+                      el.symbol.toLowerCase().startsWith(cleanQuery) ||
+                      `${el.number}` === cleanQuery)
+                );
 
-                {/* Lanthanide series title tag */}
-                <div
-                  style={{ gridColumnStart: 1, gridRowStart: 9, gridColumnEnd: 3 }}
-                  className="flex items-center justify-end pr-1 sm:pr-2 text-right pointer-events-none"
-                >
-                  <span className="text-[9px] sm:text-[10px] font-bold text-pink-400 uppercase tracking-wider truncate">
-                    Lanthanides ➔
-                  </span>
-                </div>
-
-                {/* Actinide series title tag */}
-                <div
-                  style={{ gridColumnStart: 1, gridRowStart: 10, gridColumnEnd: 3 }}
-                  className="flex items-center justify-end pr-1 sm:pr-2 text-right pointer-events-none"
-                >
-                  <span className="text-[9px] sm:text-[10px] font-bold text-rose-400 uppercase tracking-wider truncate">
-                    Actinides ➔
-                  </span>
-                </div>
-              </>
-            )}
+                return (
+                  <ElementCell
+                    key={el.number}
+                    element={el}
+                    isSelected={selectedElement?.number === el.number}
+                    isHovered={_hoveredElement?.number === el.number}
+                    isDimmed={!matches}
+                    isSearchMatch={isSearchMatch}
+                    isFavorite={isFavorite(el.number)}
+                    layoutMode={layoutMode}
+                    temperatureKelvin={temperatureKelvin}
+                    darkMode={darkMode}
+                    trendMode={trendMode}
+                    onClick={onSelectElement}
+                    onMouseEnter={onHoverElement}
+                    onMouseLeave={() => onHoverElement(null)}
+                  />
+                );
+              })}
+            </div>
           </div>
-        </div>
         </div>
       </div>
     </div>

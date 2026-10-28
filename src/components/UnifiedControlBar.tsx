@@ -60,7 +60,7 @@ export const UnifiedControlBar: React.FC<UnifiedControlBarProps> = ({
   temperatureKelvin,
   onTemperatureChange,
   elements,
-  darkMode,
+  darkMode: _darkMode,
   onOpenTrendExplanation,
   onOpenGuide,
   hasActiveFilters = false,
@@ -88,23 +88,23 @@ export const UnifiedControlBar: React.FC<UnifiedControlBarProps> = ({
   );
 
   const classifications = [
-    { id: 'all' as const, label: 'All', count: 118 },
-    { id: 'metals' as const, label: 'Metals', count: 95 },
-    { id: 'nonmetals' as const, label: 'Nonmetals', count: 17 },
-    { id: 'metalloids' as const, label: 'Metalloids', count: 6 },
-    { id: 'halogens' as const, label: 'Halogens', count: 6 },
+    { id: 'all' as const, label: 'ALL', count: 118 },
+    { id: 'metals' as const, label: 'METALS', count: 95 },
+    { id: 'nonmetals' as const, label: 'NONMETALS', count: 17 },
+    { id: 'metalloids' as const, label: 'METALLOIDS', count: 6 },
+    { id: 'halogens' as const, label: 'HALOGENS', count: 6 },
   ];
 
   const blocks: ('all' | 's' | 'p' | 'd' | 'f')[] = ['all', 's', 'p', 'd', 'f'];
   const states: ('all' | 'solid' | 'liquid' | 'gas')[] = ['all', 'solid', 'liquid', 'gas'];
 
   const trendButtons: { id: TrendType; label: string; icon: React.FC<{ size: number }> }[] = [
-    { id: 'none', label: 'Categories', icon: Layers },
-    { id: 'atomicRadius', label: 'Radius', icon: CircleDot },
-    { id: 'electronegativity', label: 'Electroneg.', icon: TrendingUp },
-    { id: 'ionizationEnergy', label: 'Ionization', icon: Zap },
-    { id: 'density', label: 'Density', icon: Scale },
-    { id: 'meltingPoint', label: 'Melting Pt', icon: Thermometer },
+    { id: 'none', label: 'CATEGORIES', icon: Layers },
+    { id: 'atomicRadius', label: 'RADIUS', icon: CircleDot },
+    { id: 'electronegativity', label: 'ELECTRONEG.', icon: TrendingUp },
+    { id: 'ionizationEnergy', label: 'IONIZATION', icon: Zap },
+    { id: 'density', label: 'DENSITY', icon: Scale },
+    { id: 'meltingPoint', label: 'MELTING PT', icon: Thermometer },
   ];
 
   const presets = [
@@ -113,7 +113,6 @@ export const UnifiedControlBar: React.FC<UnifiedControlBarProps> = ({
     { label: '293K (20°C)', kelvin: 293.15 },
     { label: '373K (100°C)', kelvin: 373.15 },
     { label: '1000K', kelvin: 1000 },
-    { label: '5778K', kelvin: 5778 },
   ];
 
   const activeTrendConfig = trendMode !== 'none' ? TREND_CONFIGS[trendMode] : null;
@@ -135,110 +134,109 @@ export const UnifiedControlBar: React.FC<UnifiedControlBarProps> = ({
 
   return (
     <div
-      className={`rounded-xl px-3 py-2 border transition-colors shrink-0 flex flex-col gap-2 ${
-        darkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-slate-200 shadow-sm'
-      }`}
+      className="p-3 sm:p-4 border-2.5 border-black dark:border-white bg-white dark:bg-[#181818] text-black dark:text-white shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#FFF] shrink-0 flex flex-col gap-3 font-mono"
     >
-      {/* ROW 1: Compact Filter Pills & Periodic Trends Pills */}
-      <div className="flex items-center justify-between gap-2 flex-wrap text-xs">
+      {/* ROW 1: Classification Pills, Blocks, States & Periodic Trends */}
+      <div className="flex items-center justify-between gap-3 flex-wrap text-xs">
         {/* Left: Chemical Classifications & Favorites */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <div className="flex items-center gap-1 text-[11px] font-bold text-slate-400 mr-0.5 uppercase">
-            <Filter size={12} />
-            <span>Class:</span>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-black dark:text-[#FFE600]">
+            <Filter size={13} strokeWidth={3} />
+            <span>CLASS:</span>
           </div>
-          {classifications.map((item) => {
-            const isActive = activeClassification === item.id && !onlyFavorites;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => onSelectClassification(item.id)}
-                className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold transition-all flex items-center gap-1 border ${
-                  isActive
-                    ? 'bg-cyan-500 text-slate-950 font-bold border-cyan-400 shadow-xs'
-                    : darkMode
-                    ? 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 border-slate-700/60'
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
-                }`}
-              >
-                <span>{item.label}</span>
-                <span
-                  className={`text-[9px] px-1 py-0.2 rounded-full font-mono ${
-                    isActive ? 'bg-black/20 text-slate-950 font-bold' : 'bg-white/10 text-slate-400'
+
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {classifications.map((item) => {
+              const isActive = activeClassification === item.id && !onlyFavorites;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => onSelectClassification(item.id)}
+                  className={`px-2.5 py-1 text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center gap-1.5 border-2 border-black dark:border-white cursor-pointer ${
+                    isActive
+                      ? 'bg-[#FFE600] text-black shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#FFF] translate-x-[-1px] translate-y-[-1px]'
+                      : 'bg-white dark:bg-[#222] text-black dark:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800'
                   }`}
                 >
-                  {item.count}
-                </span>
-              </button>
-            );
-          })}
+                  <span>{item.label}</span>
+                  <span
+                    className={`text-[9px] px-1 font-bold ${
+                      isActive ? 'bg-black text-[#FFE600]' : 'bg-neutral-200 dark:bg-neutral-700 text-black dark:text-white'
+                    }`}
+                  >
+                    {item.count}
+                  </span>
+                </button>
+              );
+            })}
 
-          {/* Favorites Filter */}
-          <button
-            type="button"
-            onClick={onToggleOnlyFavorites}
-            className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold transition-all flex items-center gap-1 border ${
-              onlyFavorites
-                ? 'bg-amber-400 text-slate-950 border-amber-300 font-bold shadow-xs'
-                : darkMode
-                ? 'bg-slate-800/80 hover:bg-slate-700 border-slate-700/60 text-slate-300 hover:text-amber-300'
-                : 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700 hover:text-amber-800'
-            }`}
-            title="Filter by favorited elements"
-          >
-            <Star size={11} className={onlyFavorites ? 'fill-slate-950 text-slate-950' : 'fill-amber-400 text-amber-400'} />
-            <span>Favs</span>
-            <span
-              className={`text-[9px] px-1 py-0.2 rounded-full font-mono ${
-                onlyFavorites ? 'bg-black/20 text-slate-950 font-bold' : 'bg-amber-400/20 text-amber-300'
+            {/* Favorites Filter */}
+            <button
+              type="button"
+              onClick={onToggleOnlyFavorites}
+              className={`px-2.5 py-1 text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center gap-1.5 border-2 border-black dark:border-white cursor-pointer ${
+                onlyFavorites
+                  ? 'bg-[#FF007A] text-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#FFF] translate-x-[-1px] translate-y-[-1px]'
+                  : 'bg-white dark:bg-[#222] text-black dark:text-white hover:bg-neutral-100'
               }`}
+              title="Filter by favorited elements"
             >
-              {favoritesCount}
-            </span>
-          </button>
+              <Star size={12} strokeWidth={2.5} className={onlyFavorites ? 'fill-white text-white' : 'fill-[#FFE600] text-black'} />
+              <span>FAVORITES</span>
+              <span className="text-[9px] px-1 font-bold bg-black text-white">
+                {favoritesCount}
+              </span>
+            </button>
+          </div>
 
           {/* Block Selection */}
-          <div className="flex items-center rounded-lg bg-slate-950/60 p-0.5 border border-slate-700/70 ml-0.5">
+          <div className="flex items-center border-2 border-black dark:border-white bg-black/5 dark:bg-white/10 p-0.5">
+            <span className="text-[10px] font-black uppercase px-1.5 text-neutral-600 dark:text-neutral-400">BLOCK:</span>
             {blocks.map((b) => (
               <button
                 key={b}
                 type="button"
                 onClick={() => onSelectBlock(b)}
-                className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase transition-colors ${
-                  activeBlock === b ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+                className={`px-2 py-0.5 text-[10px] font-black uppercase transition-all border cursor-pointer ${
+                  activeBlock === b
+                    ? 'bg-black text-[#FFE600] dark:bg-white dark:text-black border-black font-black shadow-[1px_1px_0px_0px_#000]'
+                    : 'border-transparent text-neutral-700 dark:text-neutral-300 hover:text-black dark:hover:text-white'
                 }`}
               >
-                {b === 'all' ? 'All' : `${b}`}
+                {b === 'all' ? 'ALL' : `${b}`}
               </button>
             ))}
           </div>
 
           {/* State Selection */}
-          <div className="flex items-center rounded-lg bg-slate-950/60 p-0.5 border border-slate-700/70">
+          <div className="flex items-center border-2 border-black dark:border-white bg-black/5 dark:bg-white/10 p-0.5">
+            <span className="text-[10px] font-black uppercase px-1.5 text-neutral-600 dark:text-neutral-400">PHASE:</span>
             {states.map((s) => (
               <button
                 key={s}
                 type="button"
                 onClick={() => onSelectStateFilter(s)}
-                className={`px-1.5 py-0.5 rounded text-[10px] font-medium capitalize transition-colors ${
-                  activeStateFilter === s ? 'bg-cyan-600 text-white shadow-xs font-semibold' : 'text-slate-400 hover:text-white'
+                className={`px-2 py-0.5 text-[10px] font-black uppercase transition-all border cursor-pointer ${
+                  activeStateFilter === s
+                    ? 'bg-[#00E5FF] text-black border-black font-black shadow-[1px_1px_0px_0px_#000]'
+                    : 'border-transparent text-neutral-700 dark:text-neutral-300 hover:text-black dark:hover:text-white'
                 }`}
               >
-                {s === 'all' ? 'All' : s.slice(0, 3)}
+                {s === 'all' ? 'ALL' : s.slice(0, 3)}
               </button>
             ))}
           </div>
         </div>
 
         {/* Right: Periodic Trends selector & Reset */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <div className="flex items-center gap-1 text-[11px] font-bold text-slate-400 uppercase">
-            <TrendingUp size={12} className="text-cyan-400" />
-            <span>Trend:</span>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-black dark:text-[#FFE600]">
+            <TrendingUp size={13} strokeWidth={3} />
+            <span>HEATMAP:</span>
           </div>
 
-          <div className="flex items-center gap-1 flex-wrap">
+          <div className="flex items-center gap-1.5 flex-wrap">
             {trendButtons.map((btn) => {
               const isActive = trendMode === btn.id;
               const Icon = btn.icon;
@@ -247,31 +245,29 @@ export const UnifiedControlBar: React.FC<UnifiedControlBarProps> = ({
                   key={btn.id}
                   type="button"
                   onClick={() => onSelectTrend(btn.id)}
-                  className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold transition-all flex items-center gap-1 border ${
+                  className={`px-2 py-1 text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-1 border-2 border-black dark:border-white cursor-pointer ${
                     isActive
-                      ? 'bg-cyan-500 text-slate-950 font-bold border-cyan-400 shadow-xs'
-                      : darkMode
-                      ? 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 border-slate-700/60'
-                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+                      ? 'bg-[#FFE600] text-black shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#FFF] translate-x-[-1px] translate-y-[-1px]'
+                      : 'bg-white dark:bg-[#222] text-black dark:text-white hover:bg-neutral-100'
                   }`}
                 >
-                  <Icon size={11} />
+                  <Icon size={12} />
                   <span>{btn.label}</span>
                 </button>
               );
             })}
           </div>
 
-          {/* Reset Filters button directly in toolbar */}
+          {/* Reset Filters button */}
           {hasActiveFilters && onResetAll && (
             <button
               type="button"
               onClick={onResetAll}
-              className="px-2 py-0.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-rose-300 text-[11px] font-semibold flex items-center gap-1 transition-colors"
+              className="px-2.5 py-1 text-[11px] font-black uppercase tracking-wider flex items-center gap-1 border-2 border-black bg-[#FF007A] text-white shadow-[2px_2px_0px_0px_#000] hover:translate-x-[-1px] hover:translate-y-[-1px] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer"
               title="Reset all active filters and trends"
             >
-              <RotateCcw size={11} />
-              <span>Reset</span>
+              <RotateCcw size={12} strokeWidth={2.5} />
+              <span>RESET</span>
             </button>
           )}
 
@@ -279,38 +275,38 @@ export const UnifiedControlBar: React.FC<UnifiedControlBarProps> = ({
             <button
               type="button"
               onClick={onOpenGuide}
-              className="p-1 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-white/5 transition-colors border border-white/5 ml-0.5"
-              title="Chemistry Guide & Overview"
+              className="p-1.5 border-2 border-black dark:border-white bg-white dark:bg-[#222] text-black dark:text-white shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#FFF] hover:bg-[#FFE600] hover:text-black cursor-pointer"
+              title="Chemistry Guide & Periodic Trends"
             >
-              <BookOpen size={13} />
+              <BookOpen size={15} strokeWidth={2.5} />
             </button>
           )}
         </div>
       </div>
 
-      {/* ROW 2: Compact Temperature Simulator & Active Trend Scale */}
-      <div className="flex items-center justify-between gap-3 flex-wrap text-xs pt-1 border-t border-white/5">
+      {/* ROW 2: Temperature Simulator & Active Trend Scale */}
+      <div className="flex items-center justify-between gap-3 flex-wrap text-xs pt-3 border-t-2 border-black dark:border-white">
         {/* Left: Temperature Slider & Sweeper */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <Thermometer size={14} className="text-cyan-400" />
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Thermometer size={16} strokeWidth={2.5} className="text-[#FF007A]" />
             <button
               type="button"
               onClick={() => setIsPlaying(!isPlaying)}
-              className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-white/10 hover:bg-white/20 text-slate-200 flex items-center gap-1 transition-colors"
+              className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 border-2 border-black bg-[#FFE600] text-black shadow-[2px_2px_0px_0px_#000] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer"
             >
-              {isPlaying ? <Pause size={9} /> : <Play size={9} />}
-              <span>{isPlaying ? 'Pause' : 'Sweep'}</span>
+              {isPlaying ? <Pause size={10} strokeWidth={3} /> : <Play size={10} strokeWidth={3} />}
+              <span>{isPlaying ? 'PAUSE' : 'SWEEP'}</span>
             </button>
-            <span className="font-mono text-xs font-bold text-cyan-400 min-w-[50px]">
+            <span className="font-mono text-sm font-black text-black dark:text-white px-1.5 py-0.5 border border-black bg-[#FFE600] dark:text-black min-w-[65px] text-center">
               {Math.round(temperatureKelvin)} K
             </span>
-            <span className="text-[10px] font-mono text-slate-400 hidden sm:inline">
+            <span className="text-[10px] font-mono font-bold uppercase text-neutral-600 dark:text-neutral-400">
               ({Math.round(temperatureKelvin - 273.15)}°C)
             </span>
           </div>
 
-          {/* Slider */}
+          {/* Brutalist Slider */}
           <input
             type="range"
             min="0"
@@ -318,7 +314,7 @@ export const UnifiedControlBar: React.FC<UnifiedControlBarProps> = ({
             step="10"
             value={temperatureKelvin}
             onChange={(e) => onTemperatureChange(Number(e.target.value))}
-            className="w-28 sm:w-40 md:w-48 h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+            className="w-32 sm:w-44 md:w-56 h-3 bg-neutral-200 dark:bg-neutral-800 border-2 border-black dark:border-white appearance-none cursor-pointer accent-[#FFE600]"
             title="Slide to change temperature"
           />
 
@@ -329,10 +325,10 @@ export const UnifiedControlBar: React.FC<UnifiedControlBarProps> = ({
                 key={p.label}
                 type="button"
                 onClick={() => onTemperatureChange(p.kelvin)}
-                className={`px-1.5 py-0.2 rounded text-[9px] font-mono transition-colors ${
+                className={`px-1.5 py-0.5 text-[9px] font-mono font-bold uppercase border cursor-pointer ${
                   Math.round(temperatureKelvin) === Math.round(p.kelvin)
-                    ? 'bg-cyan-500 text-slate-950 font-bold'
-                    : 'text-slate-400 hover:text-white bg-white/5'
+                    ? 'bg-black text-[#FFE600] border-black font-black shadow-[1px_1px_0px_0px_#000]'
+                    : 'bg-white dark:bg-[#222] text-neutral-700 dark:text-neutral-300 border-neutral-300 dark:border-neutral-700 hover:border-black'
                 }`}
               >
                 {p.label}
@@ -341,44 +337,50 @@ export const UnifiedControlBar: React.FC<UnifiedControlBarProps> = ({
           </div>
 
           {/* Phase counts */}
-          <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-400 pl-1 border-l border-white/10">
+          <div className="flex items-center gap-2 text-[10px] font-mono font-bold uppercase pl-2 border-l-2 border-black dark:border-white">
             <span className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-              S:{phaseCounts.solid}
+              <span className="w-2.5 h-2.5 bg-neutral-400 border border-black" />
+              S: {phaseCounts.solid}
             </span>
             <span className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
-              L:{phaseCounts.liquid}
+              <span className="w-2.5 h-2.5 bg-[#00E5FF] border border-black" />
+              L: {phaseCounts.liquid}
             </span>
             <span className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
-              G:{phaseCounts.gas}
+              <span className="w-2.5 h-2.5 bg-[#FF007A] border border-black" />
+              G: {phaseCounts.gas}
             </span>
           </div>
         </div>
 
         {/* Right: Trend Scale when active */}
         {activeTrendConfig && (
-          <div className="flex items-center gap-2 text-[10px]">
-            <span className="font-semibold text-slate-300 truncate">{activeTrendConfig.name}:</span>
-            <span className="font-mono text-slate-400">{activeTrendConfig.min}</span>
+          <div className="flex items-center gap-2 text-[10px] font-mono font-bold">
+            <span className="font-black uppercase truncate text-black dark:text-white">
+              {activeTrendConfig.name}:
+            </span>
+            <span>{activeTrendConfig.min}</span>
             <div
-              className="h-2 w-24 sm:w-32 rounded-full border border-white/10 shadow-inner"
+              className="h-3 w-28 sm:w-36 border-2 border-black shadow-[2px_2px_0px_0px_#000]"
               style={{
                 background: `linear-gradient(to right, ${getTrendColor(0)}, ${getTrendColor(0.33)}, ${getTrendColor(0.66)}, ${getTrendColor(1)})`,
               }}
               title={`Color scale for ${activeTrendConfig.name}`}
             />
-            <span className="font-mono text-slate-400">{activeTrendConfig.max} {activeTrendConfig.unit}</span>
-            <span className="text-slate-500">({measuredCount}/118)</span>
+            <span>
+              {activeTrendConfig.max} {activeTrendConfig.unit}
+            </span>
+            <span className="text-neutral-600 dark:text-neutral-400">
+              ({measuredCount}/118)
+            </span>
 
             <button
               type="button"
               onClick={onOpenTrendExplanation}
-              className="text-cyan-400 hover:text-cyan-300 p-0.5 rounded hover:bg-white/5 ml-0.5"
+              className="p-1 border border-black bg-white dark:bg-[#222] hover:bg-[#FFE600] text-black dark:text-white ml-0.5 cursor-pointer"
               title="Learn why this periodic trend occurs"
             >
-              <HelpCircle size={13} />
+              <HelpCircle size={12} strokeWidth={2.5} />
             </button>
           </div>
         )}

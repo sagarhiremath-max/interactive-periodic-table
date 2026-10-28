@@ -1,20 +1,20 @@
 import React from 'react';
 import { type ElementData, CATEGORIES } from '../data/elements';
-import { getStateAtTemperature, getStateColor, formatTemp } from '../utils/helpers';
+import { getStateAtTemperature, getStateColor } from '../utils/helpers';
 import { ATOMIC_RADII_PM } from '../data/trends';
 
 interface ElementTooltipProps {
   element: ElementData | null;
   position: { x: number; y: number } | null;
   temperatureKelvin: number;
-  darkMode: boolean;
+  darkMode?: boolean;
 }
 
 export const ElementTooltip: React.FC<ElementTooltipProps> = ({
   element,
   position,
   temperatureKelvin,
-  darkMode,
+  darkMode: _darkMode = true,
 }) => {
   if (!element || !position) return null;
 
@@ -23,17 +23,17 @@ export const ElementTooltip: React.FC<ElementTooltipProps> = ({
   const stateColor = getStateColor(currentState);
   const atomicRadius = ATOMIC_RADII_PM[element.number];
 
-  // Position tooltip safely within viewport
-  const tooltipWidth = 270;
-  const tooltipHeight = 190;
+  // Tooltip dimensions & bounding box logic
+  const tooltipWidth = 260;
+  const tooltipHeight = 170;
   const padding = 16;
 
-  let left = position.x + 16;
-  let top = position.y - 40;
+  let left = position.x + 18;
+  let top = position.y - 30;
 
   if (typeof window !== 'undefined') {
     if (left + tooltipWidth > window.innerWidth - padding) {
-      left = position.x - tooltipWidth - 16;
+      left = position.x - tooltipWidth - 18;
     }
     if (top + tooltipHeight > window.innerHeight - padding) {
       top = window.innerHeight - tooltipHeight - padding;
@@ -50,96 +50,79 @@ export const ElementTooltip: React.FC<ElementTooltipProps> = ({
         top: `${top}px`,
         position: 'fixed',
       }}
-      className={`
-        pointer-events-none z-50 w-[270px] rounded-xl p-3 shadow-2xl backdrop-blur-md border transition-opacity duration-150 animate-in fade-in zoom-in-95
-        ${
-          darkMode
-            ? 'bg-slate-900/95 border-slate-700/80 text-white shadow-black/60'
-            : 'bg-white/95 border-slate-300 text-slate-900 shadow-slate-400/40'
-        }
-      `}
+      className="pointer-events-none z-50 w-[260px] p-3 rounded-xl bg-slate-950/95 border border-cyan-500/40 text-slate-100 shadow-[0_8px_32px_rgba(0,0,0,0.6)] backdrop-blur-xl select-none transition-opacity duration-150 animate-in fade-in zoom-in-95"
     >
-      {/* Top Header */}
-      <div className="flex items-start justify-between border-b pb-2 mb-2 border-white/10">
-        <div className="flex items-center gap-2">
-          <div
-            className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg shadow-sm border"
-            style={{
-              backgroundColor: `${cat.color}20`,
-              borderColor: cat.color,
-              color: cat.color,
-            }}
-          >
+      {/* Top Category Accent Line */}
+      <div
+        className="h-1 w-full rounded-full mb-2.5 opacity-90 shadow-sm"
+        style={{ backgroundColor: cat.color }}
+      />
+
+      {/* Header: Number, Symbol, Name & Category */}
+      <div className="flex items-center gap-2.5 pb-2 border-b border-slate-800">
+        <div
+          className="w-10 h-10 rounded-lg flex flex-col items-center justify-center font-black shrink-0 border border-white/20 shadow-md"
+          style={{ backgroundColor: `${cat.color}25` }}
+        >
+          <span className="text-[8px] leading-none font-mono text-slate-400">
+            {element.number}
+          </span>
+          <span className="text-base font-black leading-none" style={{ color: cat.color }}>
             {element.symbol}
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-sm leading-tight">{element.name}</span>
-              <span className="text-[10px] font-mono px-1 rounded bg-white/10 text-slate-300">
-                #{element.number}
-              </span>
-            </div>
-            <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
-              <span>{element.atomicMass} u</span>
-            </div>
-          </div>
+          </span>
         </div>
 
-        {/* State dot */}
-        <div className="flex flex-col items-end">
-          <span
-            className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full flex items-center gap-1"
-            style={{
-              backgroundColor: `${stateColor}25`,
-              color: stateColor,
-            }}
-          >
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-1">
+            <h4 className="text-xs font-bold text-white truncate">{element.name}</h4>
             <span
-              className="w-1.5 h-1.5 rounded-full"
-              style={{ backgroundColor: stateColor }}
-            />
+              className="text-[9px] font-medium px-1.5 py-0.5 rounded-full shrink-0 truncate max-w-[100px] border border-white/10"
+              style={{ backgroundColor: `${cat.color}30`, color: cat.color }}
+            >
+              {element.categoryName}
+            </span>
+          </div>
+          <p className="text-[10px] font-mono text-slate-400 mt-0.5">
+            P{element.period} · G{element.group} · {element.block.toUpperCase()}-block
+          </p>
+        </div>
+      </div>
+
+      {/* Grid of Key Properties */}
+      <div className="grid grid-cols-2 gap-2 pt-2 text-[10px] font-sans">
+        <div>
+          <span className="text-slate-400 text-[9px] block">Atomic Mass</span>
+          <span className="font-mono font-bold text-white text-xs">{element.atomicMass} u</span>
+        </div>
+
+        <div>
+          <span className="text-slate-400 text-[9px] block">
+            State ({Math.round(temperatureKelvin)} K)
+          </span>
+          <span className="font-medium capitalize flex items-center gap-1.5 text-white">
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: stateColor }} />
             {currentState}
           </span>
         </div>
-      </div>
 
-      {/* Grid details */}
-      <div className="grid grid-cols-2 gap-y-1.5 gap-x-2 text-xs">
         <div>
-          <span className="text-slate-400 block text-[10px]">Category</span>
-          <span
-            className="font-medium truncate block text-[11px]"
-            style={{ color: cat.color }}
-          >
-            {element.categoryName}
+          <span className="text-slate-400 text-[9px] block">Electronegativity</span>
+          <span className="font-mono text-cyan-300">
+            {element.electronegativity ? element.electronegativity.toFixed(2) : '—'}
           </span>
         </div>
 
         <div>
-          <span className="text-slate-400 block text-[10px]">Period / Group</span>
-          <span className="font-medium text-[11px]">
-            P{element.period} · G{element.group} ({element.block.toUpperCase()})
-          </span>
-        </div>
-
-        <div>
-          <span className="text-slate-400 block text-[10px]">Radius / Electroneg.</span>
-          <span className="font-mono text-[10px] text-slate-300">
-            {atomicRadius ? `${atomicRadius} pm` : 'N/A'} · {element.electronegativity ?? 'N/A'}
-          </span>
-        </div>
-
-        <div>
-          <span className="text-slate-400 block text-[10px]">Melting / Boiling</span>
-          <span className="font-mono text-[10px] text-slate-300">
-            {formatTemp(element.meltingPointKelvin, 'C')} / {formatTemp(element.boilingPointKelvin, 'C')}
+          <span className="text-slate-400 text-[9px] block">Atomic Radius</span>
+          <span className="font-mono text-violet-300">
+            {atomicRadius ? `${atomicRadius} pm` : '—'}
           </span>
         </div>
       </div>
 
-      {/* Click prompt */}
-      <div className="mt-2.5 pt-1.5 border-t border-white/5 text-[10px] text-slate-400 text-center flex items-center justify-center gap-1">
-        <span>Click for full Bohr model & chemistry details</span>
+      <div className="mt-2 pt-1.5 border-t border-slate-800/80 flex items-center justify-between text-[9px] text-slate-400 font-mono">
+        <span>Click for 3D Bohr & details</span>
+        <span className="text-cyan-400">⏎</span>
       </div>
     </div>
   );

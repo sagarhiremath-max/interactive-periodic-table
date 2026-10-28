@@ -18,13 +18,12 @@ export const ElectronShellDiagram: React.FC<ElectronShellDiagramProps> = ({
   electronConfiguration,
   symbol,
   atomicNumber,
-  darkMode,
+  darkMode: _darkMode,
 }) => {
   const valenceShellIndex = shells.length - 1;
   const valenceElectrons = shells[valenceShellIndex] || 0;
 
-  // Derive subshell breakdown by principal quantum number n from the configuration string
-  // e.g. "1s2 2s2 2p6 3s2 3p6 3d6 4s2"
+  // Derive subshell breakdown by principal quantum number n
   const getSubshellsForShell = (shellIdx: number): string[] => {
     const n = shellIdx + 1;
     const regex = new RegExp(`\\b${n}[spdf]\\d+`, 'g');
@@ -33,20 +32,20 @@ export const ElectronShellDiagram: React.FC<ElectronShellDiagramProps> = ({
   };
 
   return (
-    <div className="w-full space-y-3 select-none">
+    <div className="w-full space-y-3 select-none font-mono">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">
-          <Layers size={13} className="text-cyan-400" />
-          <span>Electron Shell Capacities (n=1 to 7)</span>
+        <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-black dark:text-white">
+          <Layers size={14} strokeWidth={2.5} />
+          <span>SHELL CAPACITIES (n=1 to 7)</span>
         </div>
-        <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/20">
+        <span className="text-[10px] font-black uppercase bg-black text-[#FFE600] px-2 py-0.5 border border-black shadow-[1px_1px_0px_#000]">
           Z={atomicNumber} ({symbol})
         </span>
       </div>
 
       <div className="space-y-2">
         {shells.map((count, idx) => {
-          const shellName = SHELL_NAMES[idx] || `Shell ${idx + 1}`;
+          const shellName = SHELL_NAMES[idx] || `S${idx + 1}`;
           const maxCap = MAX_SHELL_CAPACITY[idx] || 32;
           const pct = Math.min(100, Math.round((count / maxCap) * 100));
           const isValence = idx === valenceShellIndex;
@@ -56,77 +55,65 @@ export const ElectronShellDiagram: React.FC<ElectronShellDiagramProps> = ({
           return (
             <div
               key={idx}
-              className={`p-2.5 rounded-xl border transition-all ${
+              className={`p-2.5 border-2 border-black dark:border-white transition-all shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#FFF] ${
                 isValence
-                  ? darkMode
-                    ? 'bg-cyan-950/20 border-cyan-500/40 shadow-sm'
-                    : 'bg-cyan-50/70 border-cyan-300'
-                  : darkMode
-                  ? 'bg-slate-800/40 border-slate-700/50'
-                  : 'bg-slate-50 border-slate-200'
+                  ? 'bg-[#FFE600]/30 dark:bg-[#FFE600]/20'
+                  : 'bg-white dark:bg-[#222]'
               }`}
             >
-              <div className="flex items-center justify-between text-xs mb-1">
+              <div className="flex items-center justify-between text-xs mb-1.5">
                 <div className="flex items-center gap-2">
                   <span
-                    className={`w-5 h-5 rounded-md font-mono font-bold text-[10px] flex items-center justify-center border ${
+                    className={`w-6 h-6 border-2 border-black font-black text-xs flex items-center justify-center shadow-[1px_1px_0px_#000] ${
                       isValence
-                        ? 'bg-cyan-500 text-slate-950 border-cyan-400'
+                        ? 'bg-[#FFE600] text-black'
                         : isFull
-                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                        : 'bg-white/5 text-slate-300 border-white/10'
+                        ? 'bg-[#00E599] text-black'
+                        : 'bg-white dark:bg-black text-black dark:text-white'
                     }`}
                   >
                     {shellName}
                   </span>
 
-                  <span className="font-semibold text-[11px] text-slate-200">
-                    Principal Shell n={idx + 1}
+                  <span className="font-black text-xs uppercase text-black dark:text-white">
+                    SHELL n={idx + 1}
                   </span>
 
                   {isValence && (
-                    <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30 flex items-center gap-1">
-                      <Sparkles size={9} /> Valence
+                    <span className="text-[9px] uppercase font-black px-1.5 py-0.2 border border-black bg-[#FF007A] text-white flex items-center gap-1 shadow-[1px_1px_0px_#000]">
+                      <Sparkles size={9} strokeWidth={2.5} /> VALENCE
                     </span>
                   )}
 
                   {isFull && !isValence && (
-                    <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                      <ShieldCheck size={9} /> Filled Core
+                    <span className="text-[9px] uppercase font-black px-1.5 py-0.2 border border-black bg-[#00E599] text-black flex items-center gap-1 shadow-[1px_1px_0px_#000]">
+                      <ShieldCheck size={9} strokeWidth={2.5} /> FULL
                     </span>
                   )}
                 </div>
 
-                <div className="text-[11px] font-mono">
-                  <strong className={isValence ? 'text-cyan-400' : 'text-slate-200'}>
-                    {count}
-                  </strong>
-                  <span className="text-slate-500"> / {maxCap} e⁻</span>
+                <div className="text-xs font-black">
+                  <span>{count}</span>
+                  <span className="text-neutral-500"> / {maxCap} e⁻</span>
                 </div>
               </div>
 
               {/* Progress bar */}
-              <div className="w-full h-1.5 rounded-full bg-slate-950/60 overflow-hidden border border-white/5">
+              <div className="w-full h-2.5 border-2 border-black bg-neutral-200 dark:bg-black p-0.5">
                 <div
-                  className={`h-full rounded-full transition-all duration-300 ${
-                    isValence
-                      ? 'bg-gradient-to-r from-cyan-500 to-indigo-500'
-                      : isFull
-                      ? 'bg-emerald-400'
-                      : 'bg-indigo-400'
-                  }`}
-                  style={{ width: `${Math.max(4, pct)}%` }}
+                  className="h-full bg-[#FFE600] border-r border-black transition-all duration-300"
+                  style={{ width: `${Math.max(2, pct)}%` }}
                 />
               </div>
 
               {/* Subshell list */}
               {subshells.length > 0 && (
-                <div className="flex items-center gap-1 mt-1.5 flex-wrap">
-                  <span className="text-[9px] text-slate-400 mr-0.5">Subshells:</span>
+                <div className="flex items-center gap-1 mt-2 flex-wrap">
+                  <span className="text-[9px] uppercase font-black text-neutral-600 dark:text-neutral-400">SUBSHELLS:</span>
                   {subshells.map((sub, sIdx) => (
                     <span
                       key={sIdx}
-                      className="px-1.5 py-0.2 rounded bg-black/30 border border-white/5 font-mono text-[9px] text-purple-300"
+                      className="px-1.5 py-0.2 border border-black bg-neutral-100 dark:bg-black text-black dark:text-white font-bold text-[9px]"
                     >
                       {sub}
                     </span>
@@ -138,9 +125,9 @@ export const ElectronShellDiagram: React.FC<ElectronShellDiagramProps> = ({
         })}
       </div>
 
-      <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 px-1">
-        <span>Total Electrons: <strong className="text-white">{atomicNumber} e⁻</strong></span>
-        <span>Valence Electrons: <strong className="text-cyan-400">{valenceElectrons} e⁻</strong></span>
+      <div className="flex items-center justify-between text-xs pt-1 px-1 font-black uppercase">
+        <span>TOTAL ELECTRONS: {atomicNumber} e⁻</span>
+        <span>VALENCE ELECTRONS: <strong className="text-[#FF007A]">{valenceElectrons} e⁻</strong></span>
       </div>
     </div>
   );

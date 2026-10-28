@@ -1,5 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Award, CheckCircle2, XCircle, RotateCcw, Flame, ArrowRight, Eye, Lightbulb } from 'lucide-react';
+import {
+  X,
+  Award,
+  CheckCircle2,
+  XCircle,
+  RotateCcw,
+  Flame,
+  ArrowRight,
+  Eye,
+  Lightbulb,
+  Sparkles,
+} from 'lucide-react';
 import { type ElementData, ELEMENTS_DATA } from '../data/elements';
 import { ATOMIC_RADII_PM } from '../data/trends';
 
@@ -28,7 +39,6 @@ interface Question {
 export const QuizModal: React.FC<QuizModalProps> = ({
   isOpen,
   onClose,
-  darkMode,
   onInspectElement,
 }) => {
   const [score, setScore] = useState(0);
@@ -42,7 +52,6 @@ export const QuizModal: React.FC<QuizModalProps> = ({
   const [isAnswered, setIsAnswered] = useState(false);
 
   const generateQuestion = useCallback((): Question => {
-    // Pick random element
     const targetIdx = Math.floor(Math.random() * ELEMENTS_DATA.length);
     const target = ELEMENTS_DATA[targetIdx];
 
@@ -57,155 +66,122 @@ export const QuizModal: React.FC<QuizModalProps> = ({
 
     if (qType === 'radius' && ATOMIC_RADII_PM[target.number] !== null) {
       const radius = ATOMIC_RADII_PM[target.number];
-      questionText = `What is the approximate empirical atomic radius of ${target.name} (${target.symbol})?`;
+      questionText = `What is the approximate covalent/atomic radius of ${target.name} (${target.symbol})?`;
       correctLabel = `${radius} pm`;
-      explanation = `${target.name} (Z=${target.number}, Period ${target.period}) has an empirical atomic radius of ${radius} pm.`;
-      hint = `Hint: Elements in Period ${target.period} decrease in radius from left to right. ${target.name} has ${target.shells.length} electron shells.`;
-      const deltas = [-40, -25, 30, 55];
-      for (const d of deltas) {
-        if (distractors.length < 3) {
-          const fake = Math.max(30, (radius as number) + d);
-          const fakeLabel = `${fake} pm`;
-          if (fake !== radius && !distractors.includes(fakeLabel)) {
-            distractors.push(fakeLabel);
-          }
-        }
-      }
+      distractors = [
+        `${Math.round(radius! * 0.7)} pm`,
+        `${Math.round(radius! * 1.35)} pm`,
+        `${Math.round(radius! + 45)} pm`,
+      ];
+      explanation = `${target.name} (${target.symbol}) has an empirical atomic radius of ${radius} pm.`;
+      hint = `Atomic radii decrease left-to-right across a period and increase down a group. Period ${target.period}, Group ${target.group}.`;
     } else if (qType === 'symbol') {
-      questionText = `What is the chemical symbol for ${target.name}?`;
+      questionText = `What is the chemical symbol for ${target.name} (Atomic #${target.number})?`;
       correctLabel = target.symbol;
-      explanation = `${target.name} has atomic number ${target.number} and is represented by the symbol "${target.symbol}".`;
-      hint = `Hint: ${target.name} is a ${target.categoryName.toLowerCase()} in Period ${target.period}, Group ${target.group}.`;
-      while (distractors.length < 3) {
-        const rElem = ELEMENTS_DATA[Math.floor(Math.random() * ELEMENTS_DATA.length)];
-        if (rElem.symbol !== target.symbol && !distractors.includes(rElem.symbol)) {
-          distractors.push(rElem.symbol);
-        }
-      }
+      const otherSymbols = ELEMENTS_DATA.filter((e) => e.number !== target.number)
+        .map((e) => e.symbol)
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 3);
+      distractors = otherSymbols;
+      explanation = `The chemical symbol for ${target.name} is ${target.symbol}. It resides in Period ${target.period}, Group ${target.group}.`;
+      hint = `This element sits in the ${target.categoryName} family.`;
     } else if (qType === 'number') {
-      questionText = `What is the atomic number of ${target.name} (${target.symbol})?`;
+      questionText = `What is the atomic number (Z) of ${target.name} (${target.symbol})?`;
       correctLabel = `${target.number}`;
-      explanation = `${target.name} has ${target.number} protons in its nucleus, placing it at position ${target.number} on the periodic table.`;
-      hint = `Hint: It has a relative atomic mass of ~${Math.round(target.atomicMassValue)} u and is in Period ${target.period}.`;
-      while (distractors.length < 3) {
-        const offset = (Math.floor(Math.random() * 9) - 4) || 1;
-        const fakeNum = Math.max(1, Math.min(118, target.number + offset));
-        const fakeStr = `${fakeNum}`;
-        if (fakeStr !== correctLabel && !distractors.includes(fakeStr)) {
-          distractors.push(fakeStr);
-        }
-      }
+      const offsets = [-2, -1, 1, 2, 5, -5].sort(() => 0.5 - Math.random()).slice(0, 3);
+      distractors = offsets.map((o) => `${Math.max(1, Math.min(118, target.number + o))}`);
+      explanation = `${target.name} has atomic number Z=${target.number}, indicating ${target.number} protons in its nucleus.`;
+      hint = `It resides in Period ${target.period}, Block ${target.block.toUpperCase()}.`;
     } else if (qType === 'category') {
       questionText = `Which chemical category does ${target.name} (${target.symbol}) belong to?`;
       correctLabel = target.categoryName;
-      explanation = `${target.name} is classified as a ${target.categoryName.toLowerCase()} in Period ${target.period}, Group ${target.group}.`;
-      hint = `Hint: Look at Group ${target.group} and ${target.block.toUpperCase()}-block on the table.`;
-      const allCategories = Array.from(new Set(ELEMENTS_DATA.map((e) => e.categoryName)));
-      while (distractors.length < 3) {
-        const rCat = allCategories[Math.floor(Math.random() * allCategories.length)];
-        if (rCat !== correctLabel && !distractors.includes(rCat)) {
-          distractors.push(rCat);
-        }
-      }
+      const otherCats = Array.from(new Set(ELEMENTS_DATA.map((e) => e.categoryName)))
+        .filter((c) => c !== target.categoryName)
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 3);
+      distractors = otherCats;
+      explanation = `${target.name} is categorized as a ${target.categoryName}.`;
+      hint = `It is located in Group ${target.group}, Period ${target.period}.`;
     } else if (qType === 'state') {
-      questionText = `What is the standard physical state of ${target.name} (${target.symbol}) at room temperature (293 K / 20°C)?`;
+      questionText = `What is the standard physical state of ${target.name} (${target.symbol}) at room temperature (293 K)?`;
       correctLabel = target.standardState.charAt(0).toUpperCase() + target.standardState.slice(1);
-      explanation = `At room temperature, ${target.name} is a ${target.standardState}. (Melting point: ${target.meltingPointKelvin ? `${Math.round(target.meltingPointKelvin - 273.15)}°C` : 'N/A'}).`;
-      hint = `Hint: Its boiling point is ${target.boilingPointKelvin ? `${Math.round(target.boilingPointKelvin - 273.15)}°C` : 'extreme'}.`;
       const allStates = ['Solid', 'Liquid', 'Gas', 'Synthetic'];
       distractors = allStates.filter((s) => s.toLowerCase() !== target.standardState.toLowerCase()).slice(0, 3);
+      explanation = `At standard room temperature (20°C / 293 K), ${target.name} is a ${target.standardState}.`;
+      hint = `Melting point is ${target.meltingPointKelvin ? `${Math.round(target.meltingPointKelvin)} K` : 'synthetic'}.`;
     } else if (qType === 'use' && target.commonUses && target.commonUses.length > 0) {
-      const use = target.commonUses[0];
-      questionText = `Which element is commonly utilized for: "${use}"?`;
+      const targetUse = target.commonUses[0];
+      questionText = `Which element is commonly utilized for: "${targetUse}"?`;
       correctLabel = `${target.name} (${target.symbol})`;
-      explanation = `${target.name} is key in: ${target.commonUses.join(', ')}.`;
-      hint = `Hint: The chemical symbol for this element is "${target.symbol}".`;
-      while (distractors.length < 3) {
-        const rElem = ELEMENTS_DATA[Math.floor(Math.random() * ELEMENTS_DATA.length)];
-        const distStr = `${rElem.name} (${rElem.symbol})`;
-        if (rElem.number !== target.number && !distractors.includes(distStr)) {
-          distractors.push(distStr);
-        }
-      }
+      const otherElems = ELEMENTS_DATA.filter((e) => e.number !== target.number)
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 3)
+        .map((e) => `${e.name} (${e.symbol})`);
+      distractors = otherElems;
+      explanation = `${target.name} is known for this application: ${targetUse}.`;
+      hint = `This element has atomic number Z=${target.number}.`;
     } else {
-      questionText = `Which element has the symbol "${target.symbol}" and atomic number ${target.number}?`;
+      // Name fallback
+      questionText = `Which chemical element is represented by the symbol "${target.symbol}"?`;
       correctLabel = target.name;
-      explanation = `Symbol "${target.symbol}" corresponds to ${target.name} (Atomic mass: ${target.atomicMass} u).`;
-      hint = `Hint: It has ${target.shells.length} electron shells and ${target.shells[target.shells.length - 1]} valence electrons.`;
-      while (distractors.length < 3) {
-        const rElem = ELEMENTS_DATA[Math.floor(Math.random() * ELEMENTS_DATA.length)];
-        if (rElem.name !== target.name && !distractors.includes(rElem.name)) {
-          distractors.push(rElem.name);
-        }
-      }
+      const otherNames = ELEMENTS_DATA.filter((e) => e.number !== target.number)
+        .map((e) => e.name)
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 3);
+      distractors = otherNames;
+      explanation = `"${target.symbol}" is the IUPAC standard symbol for ${target.name}.`;
+      hint = `Category: ${target.categoryName}. Atomic weight is approx ${Math.round(target.atomicMassValue)} u.`;
     }
 
-    const options: Option[] = [
+    // Shuffle options
+    const allOptions: Option[] = [
       { label: correctLabel, isCorrect: true },
       ...distractors.map((d) => ({ label: d, isCorrect: false })),
-    ].sort(() => Math.random() - 0.5);
+    ].sort(() => 0.5 - Math.random());
 
     return {
       type: qType,
       target,
       questionText,
-      options,
+      options: allOptions,
       explanation,
       hint,
     };
   }, []);
 
+  // Initialize first question on open
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !currentQuestion) {
       setCurrentQuestion(generateQuestion());
       setSelectedAnswer(null);
       setIsAnswered(false);
       setShowHint(false);
     }
-  }, [isOpen, generateQuestion]);
+  }, [isOpen, currentQuestion, generateQuestion]);
 
-  const handleSelectAnswer = (index: number) => {
+  if (!isOpen) return null;
+
+  const handleSelectAnswer = (idx: number) => {
     if (isAnswered || !currentQuestion) return;
 
-    setSelectedAnswer(index);
+    setSelectedAnswer(idx);
     setIsAnswered(true);
     setTotalAnswered((prev) => prev + 1);
 
-    const isCorrect = currentQuestion.options[index].isCorrect;
+    const isCorrect = currentQuestion.options[idx].isCorrect;
     if (isCorrect) {
       setScore((prev) => prev + 1);
       setStreak((prev) => {
-        const newStreak = prev + 1;
-        setBestStreak((best) => Math.max(best, newStreak));
-        return newStreak;
+        const next = prev + 1;
+        setBestStreak((b) => Math.max(b, next));
+        return next;
       });
     } else {
       setStreak(0);
     }
   };
 
-  const handleUseHint = () => {
-    if (showHint || isAnswered || !currentQuestion) return;
-    setShowHint(true);
-    setHintsUsed((prev) => prev + 1);
-
-    // Eliminate 1 incorrect option
-    const incorrectIndices = currentQuestion.options
-      .map((opt, i) => (!opt.isCorrect && !opt.eliminated ? i : -1))
-      .filter((i) => i !== -1);
-
-    if (incorrectIndices.length > 0) {
-      const eliminateIdx = incorrectIndices[Math.floor(Math.random() * incorrectIndices.length)];
-      setCurrentQuestion((prev) => {
-        if (!prev) return prev;
-        const newOpts = [...prev.options];
-        newOpts[eliminateIdx] = { ...newOpts[eliminateIdx], eliminated: true };
-        return { ...prev, options: newOpts };
-      });
-    }
-  };
-
-  const handleNext = () => {
+  const handleNextQuestion = () => {
     setCurrentQuestion(generateQuestion());
     setSelectedAnswer(null);
     setIsAnswered(false);
@@ -217,210 +193,218 @@ export const QuizModal: React.FC<QuizModalProps> = ({
     setTotalAnswered(0);
     setStreak(0);
     setHintsUsed(0);
-    handleNext();
+    setCurrentQuestion(generateQuestion());
+    setSelectedAnswer(null);
+    setIsAnswered(false);
+    setShowHint(false);
   };
 
-  if (!isOpen) return null;
+  const handleUseHint = () => {
+    if (showHint || !currentQuestion || isAnswered) return;
+    setShowHint(true);
+    setHintsUsed((prev) => prev + 1);
 
-  const accuracy = totalAnswered > 0 ? Math.round((score / totalAnswered) * 100) : 0;
+    // Also eliminate one wrong option
+    const wrongIdxs = currentQuestion.options
+      .map((opt, i) => (!opt.isCorrect ? i : -1))
+      .filter((i) => i !== -1);
+    if (wrongIdxs.length > 0) {
+      const toEliminate = wrongIdxs[Math.floor(Math.random() * wrongIdxs.length)];
+      setCurrentQuestion((prev) => {
+        if (!prev) return null;
+        const newOpts = [...prev.options];
+        newOpts[toEliminate] = { ...newOpts[toEliminate], eliminated: true };
+        return { ...prev, options: newOpts };
+      });
+    }
+  };
+
+  const accuracy = totalAnswered > 0 ? Math.round((score / totalAnswered) * 100) : 100;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 backdrop-blur-md bg-black/60 overflow-y-auto">
-      <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
-
-      <div
-        className={`relative z-10 w-full max-w-xl flex flex-col rounded-2xl shadow-2xl overflow-hidden border ${
-          darkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
-        }`}
-      >
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md overflow-y-auto font-sans select-none"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-full max-w-2xl flex flex-col rounded-2xl bg-slate-950 border border-cyan-500/30 text-slate-100 shadow-[0_16px_48px_rgba(0,0,0,0.7)] overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4 border-b flex items-center justify-between border-white/10 shrink-0">
-          <div className="flex items-center gap-2">
-            <Award className="text-amber-400" size={20} />
-            <h2 className="text-lg font-bold">Chemistry Challenge Quiz</h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close quiz modal"
-            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Score & Streak Header */}
-        <div className="px-6 py-3 bg-slate-950/40 border-b border-white/10 flex items-center justify-between text-xs flex-wrap gap-2">
-          <div className="flex items-center gap-4">
+        <div className="px-5 py-4 border-b border-slate-800 bg-slate-900/80 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-violet-500/20 text-violet-400 border border-violet-500/40">
+              <Award className="w-5 h-5" />
+            </div>
             <div>
-              <span className="text-slate-400 block text-[10px]">Score</span>
-              <strong className="text-base text-cyan-400 font-bold">
-                {score} / {totalAnswered} ({accuracy}%)
-              </strong>
+              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                Elements Science Quiz Challenge
+              </h2>
+              <p className="text-xs text-slate-400">
+                Test your mastery of chemical symbols, configurations, states & trends
+              </p>
             </div>
-
-            <div className="flex items-center gap-1.5 pl-3 border-l border-white/10">
-              <Flame size={16} className={streak > 0 ? 'text-amber-400 fill-amber-400 animate-bounce' : 'text-slate-500'} />
-              <div>
-                <span className="text-slate-400 block text-[10px]">Streak</span>
-                <strong className="text-sm text-amber-300 font-bold">
-                  {streak} <span className="text-[10px] text-slate-400 font-normal">(Best: {bestStreak})</span>
-                </strong>
-              </div>
-            </div>
-
-            {hintsUsed > 0 && (
-              <div className="hidden sm:block pl-3 border-l border-white/10 text-slate-400 text-[11px]">
-                Hints: <strong className="text-amber-300">{hintsUsed}</strong>
-              </div>
-            )}
           </div>
 
-          <button
-            type="button"
-            onClick={handleResetQuiz}
-            className="flex items-center gap-1 text-slate-400 hover:text-white text-xs p-1.5 rounded-lg hover:bg-white/5"
-            title="Restart Quiz"
-          >
-            <RotateCcw size={13} />
-            <span>Restart</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleResetQuiz}
+              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-all cursor-pointer"
+              title="Restart Quiz"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 rounded-xl bg-slate-800 hover:bg-rose-950/80 text-slate-300 hover:text-rose-300 border border-slate-700 hover:border-rose-500/50 transition-all cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
-        {/* Question Area */}
-        <div className="p-6 space-y-4">
-          {currentQuestion && (
-            <>
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] uppercase font-bold tracking-widest text-cyan-400 px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20">
-                  Question #{totalAnswered + 1}
-                </span>
+        {/* Live Scorebar */}
+        <div className="px-5 py-3 border-b border-slate-800/80 bg-slate-900/40 grid grid-cols-4 gap-2 text-center text-xs font-mono">
+          <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800">
+            <span className="text-[10px] text-slate-400 uppercase block">Score</span>
+            <span className="text-sm font-bold text-cyan-400">{score} / {totalAnswered}</span>
+          </div>
+          <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800">
+            <span className="text-[10px] text-slate-400 uppercase block">Accuracy</span>
+            <span className="text-sm font-bold text-emerald-400">{accuracy}%</span>
+          </div>
+          <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800">
+            <span className="text-[10px] text-slate-400 uppercase block flex items-center justify-center gap-1">
+              <Flame className="w-3 h-3 text-amber-400" /> Streak
+            </span>
+            <span className="text-sm font-bold text-amber-400">{streak} (Best: {bestStreak})</span>
+          </div>
+          <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800">
+            <span className="text-[10px] text-slate-400 uppercase block">Hints</span>
+            <span className="text-sm font-bold text-violet-400">{hintsUsed}</span>
+          </div>
+        </div>
 
-                {/* Hint Button */}
+        {/* Question Body */}
+        {currentQuestion && (
+          <div className="p-5 sm:p-6 space-y-5">
+            {/* Question Heading */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs font-mono text-cyan-400">
+                <span className="uppercase font-bold tracking-wider">
+                  QUESTION #{totalAnswered + 1} // {currentQuestion.type.toUpperCase()}
+                </span>
                 {!isAnswered && (
                   <button
                     type="button"
                     onClick={handleUseHint}
                     disabled={showHint}
-                    className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border transition-all ${
+                    className={`inline-flex items-center gap-1 text-[11px] font-mono px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
                       showHint
-                        ? 'bg-amber-400/20 border-amber-400/40 text-amber-300 cursor-default'
-                        : 'bg-white/5 hover:bg-white/10 border-white/10 text-amber-400 hover:text-amber-300 shadow-sm'
+                        ? 'bg-amber-950/50 text-amber-300 border-amber-500/40'
+                        : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
                     }`}
                   >
-                    <Lightbulb size={13} className={showHint ? 'fill-amber-400' : ''} />
-                    <span>{showHint ? 'Hint Revealed' : 'Get Hint (50/50)'}</span>
+                    <Lightbulb className="w-3 h-3 text-amber-400" />
+                    <span>{showHint ? 'Hint Revealed' : 'Get Hint (-1 50/50)'}</span>
                   </button>
                 )}
               </div>
 
-              <h3 className="text-base sm:text-lg font-bold leading-snug">
+              <h3 className="text-lg sm:text-xl font-bold text-white leading-snug">
                 {currentQuestion.questionText}
               </h3>
 
-              {/* Revealed Hint Box */}
-              {showHint && !isAnswered && (
-                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex items-start gap-2 animate-in fade-in duration-150">
-                  <Lightbulb size={15} className="shrink-0 mt-0.5 text-amber-400 fill-amber-400" />
-                  <div>
-                    <span className="font-bold text-amber-300 block mb-0.5">Helpful Chemistry Clue:</span>
-                    <p>{currentQuestion.hint}</p>
-                    <span className="text-[10px] text-amber-400/80 mt-1 block">One incorrect option has been removed!</span>
-                  </div>
+              {showHint && (
+                <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-500/30 text-amber-200 text-xs flex items-start gap-2 animate-in fade-in">
+                  <Lightbulb className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                  <span>{currentQuestion.hint}</span>
                 </div>
               )}
+            </div>
 
-              {/* Options Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {currentQuestion.options.map((opt, idx) => {
-                  let btnStyle = darkMode
-                    ? 'bg-slate-800/80 hover:bg-slate-700/80 border-slate-700 text-slate-200'
-                    : 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-800';
+            {/* Multiple Choice Options */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {currentQuestion.options.map((opt, idx) => {
+                const isSelected = selectedAnswer === idx;
+                let optStyle = 'bg-slate-900/60 border-slate-800 text-slate-200 hover:border-cyan-500/50 hover:bg-slate-800/80';
 
-                  if (opt.eliminated && !isAnswered) {
-                    btnStyle = 'opacity-25 pointer-events-none line-through border-slate-800 bg-slate-900';
-                  } else if (isAnswered) {
-                    if (opt.isCorrect) {
-                      btnStyle = 'bg-emerald-600/30 border-emerald-500 text-emerald-300 font-bold ring-1 ring-emerald-500';
-                    } else if (selectedAnswer === idx) {
-                      btnStyle = 'bg-rose-600/30 border-rose-500 text-rose-300 line-through ring-1 ring-rose-500';
-                    } else {
-                      btnStyle = 'opacity-40 border-slate-700';
-                    }
+                if (isAnswered) {
+                  if (opt.isCorrect) {
+                    optStyle = 'bg-emerald-950/80 border-emerald-500 text-emerald-200 shadow-[0_0_15px_rgba(16,185,129,0.3)]';
+                  } else if (isSelected) {
+                    optStyle = 'bg-rose-950/80 border-rose-500 text-rose-200';
+                  } else {
+                    optStyle = 'bg-slate-950/40 border-slate-900 text-slate-600 opacity-40';
                   }
+                } else if (opt.eliminated) {
+                  optStyle = 'bg-slate-950/40 border-slate-900 text-slate-600 line-through opacity-30 pointer-events-none';
+                }
 
-                  return (
-                    <button
-                      key={idx}
-                      type="button"
-                      disabled={isAnswered || opt.eliminated}
-                      onClick={() => handleSelectAnswer(idx)}
-                      className={`p-3.5 rounded-xl border text-sm font-semibold text-left transition-all flex items-center justify-between ${btnStyle} ${
-                        !isAnswered && !opt.eliminated ? 'hover:scale-[1.01]' : ''
-                      }`}
-                    >
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    disabled={isAnswered || opt.eliminated}
+                    onClick={() => handleSelectAnswer(idx)}
+                    className={`p-4 rounded-xl border text-left font-sans text-sm font-semibold transition-all flex items-center justify-between cursor-pointer ${optStyle}`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-6 h-6 rounded-lg bg-slate-950 border border-slate-800 font-mono text-xs flex items-center justify-center text-slate-400">
+                        {String.fromCharCode(65 + idx)}
+                      </span>
                       <span>{opt.label}</span>
-                      {isAnswered && opt.isCorrect && (
-                        <CheckCircle2 size={18} className="text-emerald-400 shrink-0 ml-2" />
-                      )}
-                      {isAnswered && selectedAnswer === idx && !opt.isCorrect && (
-                        <XCircle size={18} className="text-rose-400 shrink-0 ml-2" />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+                    </div>
 
-              {/* Instant Feedback & Educational Explanation */}
-              {isAnswered && (
-                <div
-                  className={`p-4 rounded-xl border text-xs leading-relaxed space-y-2 animate-in fade-in duration-150 ${
-                    currentQuestion.options[selectedAnswer ?? 0]?.isCorrect
-                      ? 'bg-emerald-950/30 border-emerald-500/30 text-emerald-200'
-                      : 'bg-rose-950/30 border-rose-500/30 text-rose-200'
-                  }`}
-                >
-                  <div className="flex items-center gap-1.5 font-bold text-sm">
-                    {currentQuestion.options[selectedAnswer ?? 0]?.isCorrect ? (
-                      <span className="flex items-center gap-1.5 text-emerald-400">
-                        <CheckCircle2 size={16} /> Correct!
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1.5 text-rose-400">
-                        <XCircle size={16} /> Incorrect
-                      </span>
+                    {isAnswered && opt.isCorrect && (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                     )}
-                  </div>
-                  <p className="text-slate-300">{currentQuestion.explanation}</p>
+                    {isAnswered && isSelected && !opt.isCorrect && (
+                      <XCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
 
-                  {/* Actions: Inspect Element or Next Question */}
-                  <div className="flex items-center justify-between pt-2 border-t border-white/10 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onInspectElement(currentQuestion.target);
-                        onClose();
-                      }}
-                      className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 font-semibold hover:underline"
-                    >
-                      <Eye size={13} />
-                      <span>Inspect {currentQuestion.target.name} in Table</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleNext}
-                      className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-md"
-                    >
-                      <span>Next Question</span>
-                      <ArrowRight size={14} />
-                    </button>
-                  </div>
+            {/* Explanation & Next Actions */}
+            {isAnswered && (
+              <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-3 animate-in fade-in">
+                <div className="flex items-start gap-2 text-xs text-slate-300">
+                  <Sparkles className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                  <p className="leading-relaxed">{currentQuestion.explanation}</p>
                 </div>
-              )}
-            </>
-          )}
-        </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onInspectElement(currentQuestion.target);
+                      onClose();
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 font-medium cursor-pointer"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Inspect #{currentQuestion.target.number} {currentQuestion.target.name} Details</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleNextQuestion}
+                    className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-cyan-400 to-teal-300 text-slate-950 hover:from-cyan-300 hover:to-teal-200 transition-all cursor-pointer shadow-md"
+                  >
+                    <span>Next Question</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

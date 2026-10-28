@@ -16,7 +16,7 @@ export const LegendBar: React.FC<LegendBarProps> = ({
   hoveredCategory,
   onHoverCategory,
   elements,
-  darkMode,
+  darkMode: _darkMode,
 }) => {
   // Count elements per category
   const categoryCounts = elements.reduce((acc, el) => {
@@ -26,13 +26,11 @@ export const LegendBar: React.FC<LegendBarProps> = ({
 
   return (
     <div
-      className={`rounded-xl px-2.5 py-1.5 border transition-colors shrink-0 flex items-center justify-between gap-2 overflow-x-auto ${
-        darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200 shadow-xs'
-      }`}
+      className="p-2.5 border-2 border-black dark:border-white bg-white dark:bg-[#181818] shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_#FFF] shrink-0 flex items-center justify-between gap-3 overflow-x-auto font-mono"
     >
-      <div className="flex items-center gap-1.5 flex-nowrap shrink-0">
-        <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 shrink-0 hidden sm:inline">
-          Legend:
+      <div className="flex items-center gap-2 flex-nowrap shrink-0">
+        <span className="text-[10px] uppercase font-black tracking-wider shrink-0 text-black dark:text-[#FFE600] hidden sm:inline">
+          LEGEND:
         </span>
 
         {Object.values(CATEGORIES).map((cat) => {
@@ -47,34 +45,29 @@ export const LegendBar: React.FC<LegendBarProps> = ({
               onMouseEnter={() => onHoverCategory(cat.id)}
               onMouseLeave={() => onHoverCategory(null)}
               style={{
-                borderColor: isSelected || isHovered ? cat.color : undefined,
-                backgroundColor: isSelected ? `${cat.color}25` : undefined,
+                backgroundColor: isSelected ? cat.color : undefined,
+                color: isSelected ? '#000000' : undefined,
               }}
               className={`
-                px-2 py-0.5 rounded-lg text-left border transition-all duration-150 flex items-center gap-1 shrink-0
+                px-2.5 py-1 text-left border-2 border-black dark:border-white transition-all flex items-center gap-1.5 shrink-0 cursor-pointer
                 ${
                   isSelected
-                    ? 'ring-1 ring-cyan-400 font-bold'
+                    ? 'font-black shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#FFF] translate-x-[-1px] translate-y-[-1px]'
                     : isHovered
-                    ? 'scale-[1.03] shadow-xs'
-                    : 'hover:scale-[1.01]'
-                }
-                ${
-                  darkMode
-                    ? 'bg-slate-800/40 border-slate-700/50 text-slate-300 hover:bg-slate-800'
-                    : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
+                    ? 'shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#FFF] translate-x-[-1px] translate-y-[-1px] bg-neutral-100 dark:bg-neutral-800'
+                    : 'bg-white dark:bg-[#222] text-black dark:text-white'
                 }
               `}
               title={`${cat.name} (${count} elements). Click to filter.`}
             >
               <span
-                className="w-2 h-2 rounded-full shrink-0 shadow-xs"
+                className="w-2.5 h-2.5 shrink-0 border border-black shadow-[1px_1px_0px_0px_#000]"
                 style={{ backgroundColor: cat.color }}
               />
-              <span className="text-[10px] font-semibold truncate leading-none">
+              <span className="text-[10px] font-black uppercase truncate leading-none">
                 {cat.name}
               </span>
-              <span className="text-[8.5px] opacity-60 font-mono">
+              <span className="text-[9px] font-mono font-bold opacity-80">
                 {count}
               </span>
             </button>
@@ -85,9 +78,9 @@ export const LegendBar: React.FC<LegendBarProps> = ({
       {selectedCategory !== 'all' && (
         <button
           onClick={() => onSelectCategory('all')}
-          className="text-[10px] text-cyan-400 hover:underline font-semibold shrink-0 pl-1 whitespace-nowrap"
+          className="text-[10px] font-black uppercase text-black dark:text-[#FFE600] bg-[#FFE600] dark:bg-black px-2 py-0.5 border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000] shrink-0 pl-1 whitespace-nowrap cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
         >
-          Reset Filter
+          [ SHOW ALL ]
         </button>
       )}
     </div>

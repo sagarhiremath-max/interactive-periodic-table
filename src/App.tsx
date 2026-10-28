@@ -1,64 +1,101 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { ELEMENTS_DATA, type ElementData } from './data/elements';
-import { Header } from './components/Header';
-import { UnifiedControlBar } from './components/UnifiedControlBar';
-import { LegendBar } from './components/LegendBar';
-import { PeriodicTable } from './components/PeriodicTable';
-import { ElementDetailPanel } from './components/ElementDetailPanel';
-import { ElementTooltip } from './components/ElementTooltip';
+import { Navbar } from './components/Navbar';
 import { CompareModal } from './components/CompareModal';
 import { QuizModal } from './components/QuizModal';
+import { ElectronExplorerModal } from './components/ElectronExplorerModal';
 import { ChemistryGuideModal } from './components/ChemistryGuideModal';
+import { AboutModal } from './components/AboutModal';
+import { HelpModal } from './components/HelpModal';
 import { useFavorites } from './utils/useFavorites';
 import type { TrendType } from './data/trends';
+import { PeriodicTablePage } from './pages/PeriodicTablePage';
+import { NotFoundPage } from './pages/NotFoundPage';
+import { Atom } from 'lucide-react';
 
-export function App() {
+// Inner component to access router hooks like useNavigate and useLocation
+function AppContent() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Theme state: defaults to dark futuristic navy science-lab interface
   const [darkMode, setDarkMode] = useState<boolean>(true);
+  const [layoutMode, setLayoutMode] = useState<'standard' | 'extended'>('standard');
+
+  // Search & Filtering
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [activeClassification, setActiveClassification] = useState<
-    'all' | 'metals' | 'nonmetals' | 'metalloids' | 'halogens'
+    'all' | 'metals' | 'nonmetals' | 'metalloids'
   >('all');
-  const [selectedBlock, setSelectedBlock] = useState<'all' | 's' | 'p' | 'd' | 'f'>('all');
-  const [selectedStateFilter, setSelectedStateFilter] = useState<'all' | 'solid' | 'liquid' | 'gas'>('all');
-  const [layoutMode, setLayoutMode] = useState<'standard' | 'extended'>('standard');
+  const [activeStateFilter, setActiveStateFilter] = useState<'all' | 'solid' | 'liquid' | 'gas'>('all');
+  const [atomicRange, setAtomicRange] = useState<[number, number]>([1, 118]);
   const [temperatureKelvin, setTemperatureKelvin] = useState<number>(293.15); // 20°C room temp
-
-  // Periodic Trends State
   const [trendMode, setTrendMode] = useState<TrendType>('none');
 
-  // Favorites Hook
+  // Favorites
   const { isFavorite, toggleFavorite, favoritesCount } = useFavorites();
   const [onlyFavorites, setOnlyFavorites] = useState<boolean>(false);
 
-  // Modals & Panels
+  // Selected element for the medium-sized panel ABOVE the periodic table
   const [selectedElement, setSelectedElement] = useState<ElementData | null>(null);
+
+  // Hover & Tooltip
   const [hoveredElement, setHoveredElement] = useState<ElementData | null>(null);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
 
-  // Compare, Quiz & Guide modals
+  // Modals state
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [compareElement1, setCompareElement1] = useState<ElementData | null>(ELEMENTS_DATA[0]); // Hydrogen
   const [compareElement2, setCompareElement2] = useState<ElementData | null>(ELEMENTS_DATA[5]); // Carbon
   const [isQuizOpen, setIsQuizOpen] = useState(false);
-  const [isGuideOpen, setIsGuideOpen] = useState(false);
-  const [guideInitialTab, setGuideInitialTab] = useState<'trends' | 'about'>('trends');
+  const [isElectronExplorerOpen, setIsElectronExplorerOpen] = useState(false);
+  const [isTrendsGuideOpen, setIsTrendsGuideOpen] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isFitViewOpen, setIsFitViewOpen] = useState(false);
+  const [isElementModalOpen, setIsElementModalOpen] = useState(false);
 
-  const detailPanelRef = useRef<HTMLDivElement>(null);
+  // Search input ref
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Sync dark mode class on document element
+  // Toggle theme mode
+  const handleToggleTheme = () => {
+    setDarkMode((prev) => !prev);
+  };
+
+  // Sync theme class to document element
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
     } else {
       document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
     }
   }, [darkMode]);
 
-  // Check for ?element= query param on mount (e.g. from Open in New Tab or direct link)
+  // Support direct URLs or query links by selecting element on same page
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    if (location.pathname.startsWith('/element/')) {
+      const param = location.pathname.replace('/element/', '');
+      const match = ELEMENTS_DATA.find(
+        (el) =>
+          String(el.number) === param ||
+          el.symbol.toLowerCase() === param.toLowerCase() ||
+          el.name.toLowerCase() === param.toLowerCase()
+      );
+      if (match) {
+        setSelectedElement(match);
+        setIsElementModalOpen(true);
+      }
+      navigate('/', { replace: true });
+      return;
+    }
+
+    const params = new URLSearchParams(location.search);
     const elementParam = params.get('element');
     if (elementParam) {
       const match = ELEMENTS_DATA.find(
@@ -69,22 +106,47 @@ export function App() {
       );
       if (match) {
         setSelectedElement(match);
+        setIsElementModalOpen(true);
       }
     }
-  }, []);
+  }, [location.pathname, location.search, navigate]);
 
-  // Close element detail modal on Escape key
+  // Keyboard navigation shortcuts: '/' for search, Esc to close/clear
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && selectedElement) {
-        setSelectedElement(null);
+      if (e.key === 'Escape') {
+        if (isElementModalOpen) setIsElementModalOpen(false);
+        if (selectedElement) setSelectedElement(null);
+        if (isCompareOpen) setIsCompareOpen(false);
+        if (isQuizOpen) setIsQuizOpen(false);
+        if (isElectronExplorerOpen) setIsElectronExplorerOpen(false);
+        if (isTrendsGuideOpen) setIsTrendsGuideOpen(false);
+        if (isAboutOpen) setIsAboutOpen(false);
+        if (isHelpOpen) setIsHelpOpen(false);
+        if (isFitViewOpen) setIsFitViewOpen(false);
+        if (searchQuery) setSearchQuery('');
+      } else if (e.key === '/' && document.activeElement !== searchInputRef.current) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
       }
     };
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedElement]);
+  }, [
+    isElementModalOpen,
+    selectedElement,
+    isCompareOpen,
+    isQuizOpen,
+    isElectronExplorerOpen,
+    isTrendsGuideOpen,
+    isAboutOpen,
+    isHelpOpen,
+    isFitViewOpen,
+    searchQuery,
+  ]);
 
-  // Handle Search match count calculation
+  // Search match count calculation
   const searchMatchCount = useMemo(() => {
     if (!searchQuery.trim()) return 0;
     const q = searchQuery.trim().toLowerCase();
@@ -97,41 +159,46 @@ export function App() {
     ).length;
   }, [searchQuery]);
 
-  // Check if any filter is active for easy reset
-  const hasActiveFiltersOrSearch =
+  // Check if any filter or selection is active
+  const hasActiveFilters =
     Boolean(searchQuery.trim()) ||
+    selectedElement !== null ||
     selectedCategory !== 'all' ||
     activeClassification !== 'all' ||
-    selectedBlock !== 'all' ||
-    selectedStateFilter !== 'all' ||
+    activeStateFilter !== 'all' ||
+    atomicRange[0] > 1 ||
+    atomicRange[1] < 118 ||
     trendMode !== 'none' ||
+    layoutMode !== 'standard' ||
     onlyFavorites ||
-    Boolean(selectedElement) ||
-    Math.round(temperatureKelvin) !== 293;
+    Math.round(temperatureKelvin) !== 293 ||
+    hoveredCategory !== null ||
+    hoveredElement !== null ||
+    isFitViewOpen ||
+    isElementModalOpen;
 
-  const handleResetAll = () => {
+  const handleResetFilters = () => {
+    setSelectedElement(null);
+    setIsElementModalOpen(false);
+    setIsFitViewOpen(false);
     setSearchQuery('');
     setSelectedCategory('all');
     setActiveClassification('all');
-    setSelectedBlock('all');
-    setSelectedStateFilter('all');
+    setActiveStateFilter('all');
+    setAtomicRange([1, 118]);
     setTemperatureKelvin(293.15);
-    setHoveredCategory(null);
     setTrendMode('none');
+    setLayoutMode('standard');
     setOnlyFavorites(false);
-    setSelectedElement(null);
-  };
-
-  const handleClassificationChange = (c: 'all' | 'metals' | 'nonmetals' | 'metalloids' | 'halogens') => {
-    setActiveClassification(c);
-    setSelectedCategory(c);
-    setOnlyFavorites(false);
-  };
-
-  const handleCategorySelect = (catId: string) => {
-    setSelectedCategory(catId);
-    setActiveClassification('all');
-    setOnlyFavorites(false);
+    setHoveredCategory(null);
+    setHoveredElement(null);
+    setTooltipPos(null);
+    setIsCompareOpen(false);
+    setIsQuizOpen(false);
+    setIsElectronExplorerOpen(false);
+    setIsTrendsGuideOpen(false);
+    setIsAboutOpen(false);
+    setIsHelpOpen(false);
   };
 
   const handleHoverElement = (el: ElementData | null, e?: React.MouseEvent<HTMLDivElement>) => {
@@ -143,158 +210,104 @@ export function App() {
     }
   };
 
-  const handleAddToCompare = (el: ElementData) => {
-    if (!compareElement1) {
-      setCompareElement1(el);
-    } else if (!compareElement2) {
-      setCompareElement2(el);
-    } else {
-      setCompareElement2(el);
-    }
+  const handlePickRandomElement = () => {
+    const randomIdx = Math.floor(Math.random() * ELEMENTS_DATA.length);
+    const randomEl = ELEMENTS_DATA[randomIdx];
+    setSelectedElement(randomEl);
+    setIsElementModalOpen(true);
+  };
+
+  const handleOpenCompare = (el1?: ElementData, el2?: ElementData) => {
+    if (el1) setCompareElement1(el1);
+    if (el2) setCompareElement2(el2);
     setIsCompareOpen(true);
-  };
-
-  const handleOpenTrendExplanation = () => {
-    setGuideInitialTab('trends');
-    setIsGuideOpen(true);
-  };
-
-  const handleOpenGuide = () => {
-    setGuideInitialTab('about');
-    setIsGuideOpen(true);
   };
 
   return (
     <div
-      className={`h-screen lg:h-[100dvh] flex flex-col overflow-y-auto lg:overflow-hidden font-sans transition-colors duration-200 select-none ${
-        darkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'
+      className={`min-h-screen flex flex-col transition-colors duration-300 font-sans ${
+        darkMode ? 'bg-[#050814] text-slate-100' : 'bg-slate-50 text-slate-900'
       }`}
     >
-      {/* Main Header (Compact ~38-42px) */}
-      <Header
+      {/* 1. Global Navigation Bar */}
+      <Navbar
+        darkMode={darkMode}
+        onToggleTheme={handleToggleTheme}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        searchMatchCount={searchMatchCount}
-        layoutMode={layoutMode}
-        onToggleLayout={() =>
-          setLayoutMode((prev) => (prev === 'standard' ? 'extended' : 'standard'))
-        }
-        darkMode={darkMode}
-        onToggleDarkMode={() => setDarkMode((prev) => !prev)}
-        onOpenQuiz={() => setIsQuizOpen(true)}
+        onClearSearch={() => setSearchQuery('')}
+        searchInputRef={searchInputRef}
         onOpenCompare={() => setIsCompareOpen(true)}
-        onResetAll={handleResetAll}
-        hasActiveFiltersOrSearch={hasActiveFiltersOrSearch}
-        onSelectElement={(el) => setSelectedElement(el)}
+        onOpenQuiz={() => setIsQuizOpen(true)}
+        onOpenTrends={() => {
+          setIsTrendsGuideOpen(true);
+        }}
+        onOpenElectronExplorer={() => setIsElectronExplorerOpen(true)}
+        onPickRandomElement={handlePickRandomElement}
+        onOpenAbout={() => setIsAboutOpen(true)}
+        onOpenHelp={() => setIsHelpOpen(true)}
+        favoritesCount={favoritesCount}
+        onlyFavorites={onlyFavorites}
+        onToggleOnlyFavorites={() => {
+          setOnlyFavorites(!onlyFavorites);
+        }}
+        searchMatchCount={searchMatchCount}
+        onOpenFitView={() => setIsFitViewOpen(true)}
+        onResetAll={handleResetFilters}
+        hasActiveSelections={hasActiveFilters}
       />
 
-      {/* Main Content Workspace: Fit in viewport on Desktop, natural scroll on mobile */}
-      <main className="flex-1 min-h-0 flex flex-col max-w-[1780px] w-full mx-auto px-2 sm:px-4 py-1.5 gap-2 overflow-y-auto lg:overflow-hidden">
-        {/* Unified 2-Tier Control Toolbar: Classification, Blocks, States, Trends, Temperature */}
-        <UnifiedControlBar
-          activeClassification={activeClassification}
-          onSelectClassification={handleClassificationChange}
-          activeBlock={selectedBlock}
-          onSelectBlock={setSelectedBlock}
-          activeStateFilter={selectedStateFilter}
-          onSelectStateFilter={setSelectedStateFilter}
-          onlyFavorites={onlyFavorites}
-          onToggleOnlyFavorites={() => setOnlyFavorites((prev) => !prev)}
-          favoritesCount={favoritesCount}
-          trendMode={trendMode}
-          onSelectTrend={setTrendMode}
-          temperatureKelvin={temperatureKelvin}
-          onTemperatureChange={setTemperatureKelvin}
-          elements={ELEMENTS_DATA}
-          darkMode={darkMode}
-          onOpenTrendExplanation={handleOpenTrendExplanation}
-          onOpenGuide={handleOpenGuide}
-          hasActiveFilters={hasActiveFiltersOrSearch}
-          onResetAll={handleResetAll}
-        />
-
-        {/* Workspace: Periodic Table (+ Legend) neatly fills the width without being squeezed */}
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden items-stretch w-full">
-          {/* Core Periodic Table Matrix and Bottom Color Legend */}
-          <div className="flex-1 min-w-0 h-full flex flex-col justify-between overflow-hidden gap-1.5">
-            <div className="flex-1 min-h-0 h-full w-full overflow-hidden flex flex-col">
-              <PeriodicTable
-                elements={ELEMENTS_DATA}
+      {/* 2. Main Page */}
+      <div className="flex-1">
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <PeriodicTablePage
+                darkMode={darkMode}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
+                activeClassification={activeClassification}
+                setActiveClassification={setActiveClassification}
+                activeStateFilter={activeStateFilter}
+                setActiveStateFilter={setActiveStateFilter}
+                atomicRange={atomicRange}
+                setAtomicRange={setAtomicRange}
+                temperatureKelvin={temperatureKelvin}
+                setTemperatureKelvin={setTemperatureKelvin}
+                trendMode={trendMode}
+                setTrendMode={setTrendMode}
+                layoutMode={layoutMode}
+                setLayoutMode={setLayoutMode}
+                onlyFavorites={onlyFavorites}
+                setOnlyFavorites={setOnlyFavorites}
+                isFavorite={isFavorite}
+                onToggleFavorite={toggleFavorite}
                 selectedElement={selectedElement}
+                onSelectElement={setSelectedElement}
                 hoveredElement={hoveredElement}
                 hoveredCategory={hoveredCategory}
-                selectedCategory={selectedCategory}
-                selectedBlock={selectedBlock}
-                selectedStateFilter={selectedStateFilter}
-                searchQuery={searchQuery}
-                layoutMode={layoutMode}
-                temperatureKelvin={temperatureKelvin}
-                darkMode={darkMode}
-                trendMode={trendMode}
-                onlyFavorites={onlyFavorites}
-                isFavorite={isFavorite}
-                onSelectElement={(el) => setSelectedElement(el)}
-                onHoverElement={handleHoverElement}
-                onSelectCategory={handleCategorySelect}
-                onClearSearch={handleResetAll}
+                setHoveredCategory={setHoveredCategory}
+                tooltipPos={tooltipPos}
+                handleHoverElement={handleHoverElement}
+                handleResetFilters={handleResetFilters}
+                hasActiveFilters={hasActiveFilters}
+                onOpenQuiz={() => setIsQuizOpen(true)}
+                onOpenCompare={handleOpenCompare}
+                isFitViewOpen={isFitViewOpen}
+                setIsFitViewOpen={setIsFitViewOpen}
+                isModalOpen={isElementModalOpen}
+                setIsModalOpen={setIsElementModalOpen}
               />
-            </div>
-
-            {/* Compact Category Color Legend Bar (visible in standard category mode) */}
-            {trendMode === 'none' && (
-              <LegendBar
-                selectedCategory={selectedCategory}
-                onSelectCategory={handleCategorySelect}
-                hoveredCategory={hoveredCategory}
-                onHoverCategory={setHoveredCategory}
-                elements={ELEMENTS_DATA}
-                darkMode={darkMode}
-              />
-            )}
-          </div>
-        </div>
-      </main>
-
-      {/* Element Information Modal Dialog Overlay (opens cleanly on top of periodic table) */}
-      {selectedElement && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={`${selectedElement.name} details`}
-          className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-5 md:p-6 bg-slate-950/75 backdrop-blur-sm animate-in fade-in duration-150"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setSelectedElement(null);
             }
-          }}
-        >
-          <div
-            ref={detailPanelRef}
-            className="w-full max-w-xl md:max-w-2xl lg:max-w-3xl h-[90vh] max-h-[820px] flex flex-col rounded-2xl shadow-2xl overflow-hidden border border-slate-700/80 animate-in zoom-in-95 duration-150 bg-slate-900"
-          >
-            <ElementDetailPanel
-              element={selectedElement}
-              darkMode={darkMode}
-              temperatureKelvin={temperatureKelvin}
-              isFavorite={isFavorite(selectedElement.number)}
-              onToggleFavorite={toggleFavorite}
-              onSelectElement={(el) => setSelectedElement(el)}
-              onAddToCompare={handleAddToCompare}
-              onClose={() => setSelectedElement(null)}
-            />
-          </div>
-        </div>
-      )}
+          />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </div>
 
-      {/* Floating Hover Tooltip */}
-      <ElementTooltip
-        element={hoveredElement}
-        position={tooltipPos}
-        temperatureKelvin={temperatureKelvin}
-        darkMode={darkMode}
-      />
-
-      {/* Side-by-Side Element Comparison Modal */}
+      {/* 3. Global Modals */}
       <CompareModal
         isOpen={isCompareOpen}
         onClose={() => setIsCompareOpen(false)}
@@ -305,25 +318,94 @@ export function App() {
         onSelectElement2={setCompareElement2}
       />
 
-      {/* Chemistry Quiz Modal */}
       <QuizModal
         isOpen={isQuizOpen}
         onClose={() => setIsQuizOpen(false)}
         darkMode={darkMode}
         onInspectElement={(el) => {
           setSelectedElement(el);
+          setIsElementModalOpen(true);
         }}
       />
 
-      {/* Chemistry & Periodic Trends Guide Modal */}
-      <ChemistryGuideModal
-        isOpen={isGuideOpen}
-        onClose={() => setIsGuideOpen(false)}
-        initialTab={guideInitialTab}
-        selectedTrend={trendMode}
+      <ElectronExplorerModal
+        isOpen={isElectronExplorerOpen}
+        onClose={() => setIsElectronExplorerOpen(false)}
+        initialElement={selectedElement || ELEMENTS_DATA[25]} // Iron
         darkMode={darkMode}
       />
+
+      <ChemistryGuideModal
+        isOpen={isTrendsGuideOpen}
+        onClose={() => setIsTrendsGuideOpen(false)}
+        selectedTrend={trendMode}
+        darkMode={darkMode}
+        onApplyTrend={(trend) => {
+          setTrendMode(trend);
+        }}
+      />
+
+      <AboutModal
+        isOpen={isAboutOpen}
+        onClose={() => setIsAboutOpen(false)}
+      />
+
+      <HelpModal
+        isOpen={isHelpOpen}
+        onClose={() => setIsHelpOpen(false)}
+      />
+
+      {/* 4. Footer */}
+      <footer className="mt-12 py-8 border-t border-slate-800/80 bg-slate-950/70 text-slate-400 text-xs font-mono">
+        <div className="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <Atom className="w-4 h-4 text-cyan-400" />
+            <span className="font-bold text-slate-300">ELEMENTS LAB v3.0</span>
+            <span>—</span>
+            <span>Complete 118-Element Interactive Periodic Table</span>
+          </div>
+
+          <div className="flex items-center gap-6 text-slate-400">
+            <button
+              type="button"
+              onClick={() => setIsAboutOpen(true)}
+              className="hover:text-cyan-300 transition-colors cursor-pointer"
+            >
+              About
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsHelpOpen(true)}
+              className="hover:text-cyan-300 transition-colors cursor-pointer"
+            >
+              Help & Shortcuts
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsQuizOpen(true)}
+              className="hover:text-cyan-300 transition-colors cursor-pointer"
+            >
+              Science Quiz
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsCompareOpen(true)}
+              className="hover:text-cyan-300 transition-colors cursor-pointer"
+            >
+              Compare
+            </button>
+          </div>
+        </div>
+      </footer>
     </div>
+  );
+}
+
+export function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
   );
 }
 
