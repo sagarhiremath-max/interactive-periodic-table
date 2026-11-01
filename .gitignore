@@ -3,7 +3,7 @@
 .env*.local
 
 # Database
-data/
+/data/
 *.db
 *.db-journal
 

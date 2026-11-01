@@ -11,7 +11,9 @@ import {
   ChevronUp,
   Globe,
   Monitor,
-  Calendar
+  Calendar,
+  Mail,
+  Copy
 } from 'lucide-react';
 import type { FeedbackCategory, BrowserInfo } from '../types/feedback';
 
@@ -47,6 +49,12 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [offlineSaved, setOfflineSaved] = useState<{
+    saved: boolean;
+    mailtoUrl: string;
+    mailBody: string;
+  } | null>(null);
+  const [copied, setCopied] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ description?: string; email?: string; screenshot?: string }>({});
   const [showAutoCaptured, setShowAutoCaptured] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -91,6 +99,8 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
       setCapturedInfo(info);
       setErrorMessage(null);
       setSuccessMessage(null);
+      setOfflineSaved(null);
+      setCopied(false);
       setFieldErrors({});
 
       // Focus textarea on open
@@ -223,36 +233,72 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
         honeypot: honeypot || undefined // anti-spam
       };
 
-      const response = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
+      // 1. Attempt API submission to backend if running
+      try {
+        const response = await fetch('/api/feedback', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to submit feedback. Please try again.');
+        if (response.ok) {
+          const data = await response.json();
+          setSuccessMessage(
+            data.message ||
+              'Thank you for your feedback! Your report has been submitted successfully. We appreciate your help.'
+          );
+          setDescription('');
+          setEmail('');
+          setScreenshotData(null);
+          setScreenshotName('');
+          setTimeout(() => {
+            onClose();
+          }, 3200);
+          return;
+        }
+      } catch (_apiErr) {
+        // Backend not available (e.g. GitHub Pages static hosting or offline)
       }
 
-      // Success
-      setSuccessMessage(
-        data.message ||
-          'Thank you for your feedback! Your report has been submitted successfully. We appreciate your help.'
-      );
+      // 2. Client-side resilient fallback (GitHub Pages static deployment):
+      // Safely preserve in localStorage so user feedback is NEVER lost
+      const localRecord = {
+        id: 'fb_' + Date.now(),
+        created_at: new Date().toISOString(),
+        category,
+        description: description.trim(),
+        email: email.trim() || null,
+        page_url: capturedInfo.url || window.location.href,
+        browser_info: capturedInfo.browser,
+        status: 'saved_locally'
+      };
 
-      // Reset form fields
+      try {
+        const existing = JSON.parse(localStorage.getItem('elements_lab_local_feedback') || '[]');
+        existing.unshift(localRecord);
+        localStorage.setItem('elements_lab_local_feedback', JSON.stringify(existing.slice(0, 50)));
+      } catch (e) {
+        console.warn('LocalStorage save notice:', e);
+      }
+
+      // 3. Compose mailto link so the user can easily dispatch it to the developer
+      const targetEmail = 'hiremathsagar025@gmail.com';
+      const subject = `[Elements Lab Feedback] ${category}`;
+      const mailBody = `Feedback Report - Elements Lab\n-----------------------------\nCategory: ${category}\nReporter Email: ${email.trim() || 'Not provided'}\nPage: ${capturedInfo.url || window.location.href}\nTimestamp: ${new Date().toLocaleString()}\n\nDescription:\n${description.trim()}\n\nBrowser: ${capturedInfo.browser.userAgent || 'Unknown'}\nScreen: ${capturedInfo.browser.screenWidth}x${capturedInfo.browser.screenHeight}`;
+      const mailtoUrl = `mailto:${targetEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(mailBody)}`;
+
+      setOfflineSaved({
+        saved: true,
+        mailtoUrl,
+        mailBody
+      });
+
       setDescription('');
       setEmail('');
       setScreenshotData(null);
       setScreenshotName('');
-
-      // Auto close after 3 seconds on success
-      setTimeout(() => {
-        onClose();
-      }, 3200);
     } catch (err: any) {
       setErrorMessage(err.message || 'An unexpected error occurred. Please try again.');
     } finally {
@@ -306,8 +352,62 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
 
         {/* Content Body */}
         <div className="p-5 sm:p-6 max-h-[75vh] overflow-y-auto space-y-5">
-          {/* Success State Notification */}
-          {successMessage ? (
+          {/* Static / Client-side Saved Notification */}
+          {offlineSaved ? (
+            <div className="py-6 px-4 rounded-xl bg-slate-900/90 border border-cyan-500/40 text-center space-y-4 animate-in fade-in zoom-in-95 duration-200">
+              <div className="w-12 h-12 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-white">Feedback Recorded!</h3>
+                <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto leading-relaxed">
+                  Your feedback has been safely saved in your browser storage.
+                </p>
+                <p className="text-xs text-slate-400 max-w-md mx-auto">
+                  To notify Sagar directly, click below to open your email client with this report pre-filled:
+                </p>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                <a
+                  href={offlineSaved.mailtoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs sm:text-sm shadow-[0_4px_16px_rgba(6,182,212,0.3)] transition-all cursor-pointer"
+                >
+                  <Mail className="w-4 h-4" />
+                  Send to hiremathsagar025@gmail.com
+                </a>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(offlineSaved.mailBody);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2500);
+                  }}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs sm:text-sm border border-slate-700 transition-colors cursor-pointer"
+                >
+                  <Copy className="w-4 h-4" />
+                  {copied ? 'Copied to Clipboard!' : 'Copy Report'}
+                </button>
+              </div>
+
+              <div className="pt-3 border-t border-slate-800/80">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOfflineSaved(null);
+                    onClose();
+                  }}
+                  className="px-4 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 text-xs transition-colors cursor-pointer"
+                >
+                  Done & Close
+                </button>
+              </div>
+            </div>
+          ) : successMessage ? (
             <div className="py-6 px-4 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-center space-y-3 animate-in fade-in zoom-in-95 duration-200">
               <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center mx-auto">
                 <CheckCircle2 className="w-6 h-6" />
