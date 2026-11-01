@@ -1,23 +1,29 @@
-import { handleFeedbackApi } from './feedbackRouter.js';
-import { handleQuizApi } from './quizRouter.js';
-
 export function feedbackApiPlugin() {
   return {
     name: 'feedback-and-quiz-api-plugin',
-    configureServer(server) {
-      server.middlewares.use(async (req, res, next) => {
-        try {
-          const feedbackHandled = await handleFeedbackApi(req, res);
-          if (feedbackHandled) return;
+    // Only apply in development server mode, never during production static build
+    apply: 'serve',
+    async configureServer(server) {
+      try {
+        const { handleFeedbackApi } = await import('./feedbackRouter.js');
+        const { handleQuizApi } = await import('./quizRouter.js');
 
-          const quizHandled = await handleQuizApi(req, res);
-          if (quizHandled) return;
+        server.middlewares.use(async (req, res, next) => {
+          try {
+            const feedbackHandled = await handleFeedbackApi(req, res);
+            if (feedbackHandled) return;
 
-          next();
-        } catch (err) {
-          next(err);
-        }
-      });
+            const quizHandled = await handleQuizApi(req, res);
+            if (quizHandled) return;
+
+            next();
+          } catch (err) {
+            next(err);
+          }
+        });
+      } catch (err) {
+        console.warn('[viteFeedbackPlugin] Note: Backend API router could not be loaded:', err.message);
+      }
     }
   };
 }
