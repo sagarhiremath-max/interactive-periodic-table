@@ -181,24 +181,108 @@ export const QuizModal: React.FC<QuizModalProps> = ({
     ]);
   };
 
-  // Generate fallback questions if API is unavailable
-  const generateFallbackQuestions = (count: number): BankQuestion[] => {
+  // Generate rich, verified questions if API is unavailable (e.g. offline or static GitHub Pages)
+  const generateFallbackQuestions = (count: number, topic: string, diff: string): BankQuestion[] => {
     const list: BankQuestion[] = [];
+    const usedElementIndices = new Set<number>();
+    const effectiveDiff = diff === 'all' ? 'Intermediate' : diff;
+    const effectiveTopic = topic === 'all' ? 'Periodic Table and element properties' : topic;
+
+    const questionTypes = ['symbol', 'number', 'category', 'period_group', 'block', 'protons_neutrons', 'state'];
+
     for (let i = 0; i < count; i++) {
-      const el = ELEMENTS_DATA[Math.floor(Math.random() * ELEMENTS_DATA.length)];
-      const others = ELEMENTS_DATA.filter(e => e.number !== el.number).slice(0, 3);
+      let randIdx = Math.floor(Math.random() * ELEMENTS_DATA.length);
+      while (usedElementIndices.has(randIdx) && usedElementIndices.size < ELEMENTS_DATA.length) {
+        randIdx = (randIdx + 1) % ELEMENTS_DATA.length;
+      }
+      usedElementIndices.add(randIdx);
+      const target = ELEMENTS_DATA[randIdx];
+
+      const qType = questionTypes[i % questionTypes.length];
+      let questionText = '';
+      let correct = '';
+      const distractors: string[] = [];
+      let explanation = '';
+      let formula: string | null = null;
+
+      if (qType === 'symbol') {
+        questionText = `What is the chemical symbol for the element ${target.name} (Atomic #${target.number})?`;
+        correct = target.symbol;
+        const pool = ELEMENTS_DATA.filter(e => e.number !== target.number).map(e => e.symbol);
+        const shuffled = pool.sort(() => 0.5 - Math.random());
+        distractors.push(...Array.from(new Set(shuffled)).slice(0, 3));
+        explanation = `The chemical symbol for ${target.name} is "${target.symbol}". It resides in Period ${target.period}, Group ${target.group}.`;
+      } else if (qType === 'number') {
+        questionText = `What is the atomic number (Z, count of protons) of ${target.name} (${target.symbol})?`;
+        correct = `${target.number}`;
+        const uniqueNums = new Set<number>();
+        const candidateOffsets = [1, -1, 2, -2, 5, -5, 10, -10];
+        for (const off of candidateOffsets.sort(() => 0.5 - Math.random())) {
+          const val = target.number + off;
+          if (val >= 1 && val <= 118 && val !== target.number) {
+            uniqueNums.add(val);
+            if (uniqueNums.size >= 3) break;
+          }
+        }
+        while (uniqueNums.size < 3) {
+          const r = Math.floor(Math.random() * 118) + 1;
+          if (r !== target.number) uniqueNums.add(r);
+        }
+        distractors.push(...Array.from(uniqueNums).map(String));
+        explanation = `${target.name} has atomic number Z=${target.number}, meaning its nucleus holds ${target.number} protons.`;
+        formula = 'Z = protons';
+      } else if (qType === 'category') {
+        questionText = `To which chemical classification or family does ${target.name} (${target.symbol}) belong?`;
+        correct = target.categoryName;
+        const otherCats = Array.from(new Set(ELEMENTS_DATA.map(e => e.categoryName))).filter(c => c !== target.categoryName);
+        distractors.push(...otherCats.sort(() => 0.5 - Math.random()).slice(0, 3));
+        explanation = `${target.name} (${target.symbol}) is classified as a ${target.categoryName}.`;
+      } else if (qType === 'period_group') {
+        questionText = `In which Period and Group is ${target.name} (${target.symbol}, Z=${target.number}) located in the periodic table?`;
+        correct = `Period ${target.period}, Group ${target.group}`;
+        distractors.push(
+          `Period ${Math.max(1, (target.period + 1) % 8)}, Group ${target.group}`,
+          `Period ${target.period}, Group ${Math.max(1, (target.group + 2) % 19)}`,
+          `Period ${Math.max(1, (target.period - 1) || 7)}, Group ${Math.max(1, (target.group - 1) || 18)}`
+        );
+        explanation = `${target.name} is situated in Period ${target.period} (principal quantum shell n=${target.period}) and Group ${target.group}.`;
+      } else if (qType === 'block') {
+        questionText = `In which subshell block (s, p, d, f) of the periodic table is ${target.name} (${target.symbol}) placed?`;
+        correct = `${target.block}-block`;
+        const allBlocks = ['s-block', 'p-block', 'd-block', 'f-block'].filter(b => b !== `${target.block}-block`);
+        distractors.push(...allBlocks);
+        explanation = `${target.name} has its valence differentiating electron entering the ${target.block} subshell, placing it in the ${target.block}-block.`;
+      } else if (qType === 'protons_neutrons') {
+        const mass = Math.round(target.atomicMassValue);
+        const neutrons = mass - target.number;
+        questionText = `How many neutrons are present in the standard isotope of ${target.name}-${mass} (Z = ${target.number})?`;
+        correct = `${neutrons}`;
+        distractors.push(`${neutrons + 1}`, `${Math.max(0, neutrons - 1)}`, `${neutrons + 2}`);
+        explanation = `Neutrons N = Mass number A (${mass}) - Atomic number Z (${target.number}) = ${neutrons}.`;
+        formula = 'N = A - Z';
+      } else {
+        const stateCap = target.standardState.charAt(0).toUpperCase() + target.standardState.slice(1);
+        questionText = `What is the standard physical state of pure elemental ${target.name} (${target.symbol}) at 298 K (25°C) and 1 atm?`;
+        correct = stateCap;
+        const allStates = ['Solid', 'Liquid', 'Gas', 'Synthetic'].filter(s => s.toLowerCase() !== target.standardState.toLowerCase());
+        distractors.push(...allStates.slice(0, 3));
+        explanation = `Under standard temperature and pressure (298 K, 1 atm), ${target.name} exists as a ${target.standardState}.`;
+      }
+
+      const allOptions = [correct, ...distractors].sort(() => 0.5 - Math.random());
       list.push({
-        id: `FALLBACK-${i + 1}`,
-        topic: 'Periodic Table and element properties',
-        difficulty: 'Easy',
+        id: `CLIENT-Q-${String(i + 1).padStart(4, '0')}`,
+        topic: effectiveTopic,
+        difficulty: effectiveDiff,
         format: 'Multiple Choice',
-        question: `What is the chemical symbol for the element ${el.name} (Atomic number ${el.number})?`,
-        options: [el.symbol, others[0].symbol, others[1].symbol, others[2].symbol].sort(() => 0.5 - Math.random()),
-        correctAnswer: el.symbol,
-        explanation: `${el.name} is represented by the chemical symbol "${el.symbol}". It resides in Period ${el.period}, Group ${el.group}.`,
-        formula: null
+        question: questionText,
+        options: allOptions,
+        correctAnswer: correct,
+        explanation,
+        formula
       });
     }
+
     return list;
   };
 
@@ -225,11 +309,11 @@ export const QuizModal: React.FC<QuizModalProps> = ({
         if (data.questions && data.questions.length > 0) {
           loadedQuestions = data.questions;
         } else {
-          loadedQuestions = generateFallbackQuestions(questionCount);
+          loadedQuestions = generateFallbackQuestions(questionCount, selectedTopic, selectedDifficulty);
         }
       } catch (err) {
         console.warn('Could not fetch from quiz API, using local question generator fallback:', err);
-        loadedQuestions = generateFallbackQuestions(questionCount);
+        loadedQuestions = generateFallbackQuestions(questionCount, selectedTopic, selectedDifficulty);
       }
     }
 
