@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   X,
   Award,
@@ -7,404 +7,818 @@ import {
   RotateCcw,
   Flame,
   ArrowRight,
-  Eye,
   Lightbulb,
   Sparkles,
+  Timer,
+  BookOpen,
+  Trophy,
+  BarChart3,
+  ListFilter,
+  Play,
+  Clock,
+  Layers,
+  ChevronDown
 } from 'lucide-react';
 import { type ElementData, ELEMENTS_DATA } from '../data/elements';
-import { ATOMIC_RADII_PM } from '../data/trends';
 
 interface QuizModalProps {
   isOpen: boolean;
   onClose: () => void;
   darkMode: boolean;
-  onInspectElement: (element: ElementData) => void;
+  onInspectElement?: (element: ElementData) => void;
 }
 
-interface Option {
-  label: string;
-  isCorrect: boolean;
-  eliminated?: boolean;
-}
-
-interface Question {
-  type: string;
-  target: ElementData;
-  questionText: string;
-  options: Option[];
+export interface BankQuestion {
+  id: string;
+  topic: string;
+  difficulty: string;
+  format: string;
+  question: string;
+  options: string[];
+  correctAnswer: string;
   explanation: string;
-  hint: string;
+  formula?: string | null;
 }
+
+interface UserAnswerRecord {
+  question: BankQuestion;
+  selectedOptionIndex: number;
+  isCorrect: boolean;
+}
+
+export const QUIZ_TOPICS = [
+  'Periodic Table and element properties',
+  'Atomic structure',
+  'Protons, neutrons and electrons',
+  'Electron configuration',
+  'Chemical bonding',
+  'Ionic and covalent compounds',
+  'Chemical formulas and nomenclature',
+  'Chemical reactions',
+  'Acids, bases and salts',
+  'Mole concept and Avogadro\'s number',
+  'Stoichiometry',
+  'Solutions and concentration',
+  'Chemical equilibrium',
+  'Thermodynamics',
+  'Electrochemistry',
+  'Organic chemistry',
+  'Hydrocarbons',
+  'Functional groups',
+  'Isomerism',
+  'Reaction mechanisms',
+  'Laboratory equipment and safety',
+  'Chemical calculations',
+  'Periodic trends',
+  'Isotopes and radioactivity',
+  'Environmental chemistry',
+  'Industrial chemistry',
+  'Everyday chemistry',
+  'Advanced chemistry problem-solving',
+];
+
+export const DIFFICULTIES = ['Beginner', 'Easy', 'Intermediate', 'Advanced', 'Expert'];
+export const QUESTION_COUNTS = [10, 20, 25, 50, 100];
 
 export const QuizModal: React.FC<QuizModalProps> = ({
   isOpen,
   onClose,
-  onInspectElement,
 }) => {
-  const [score, setScore] = useState(0);
-  const [totalAnswered, setTotalAnswered] = useState(0);
-  const [streak, setStreak] = useState(0);
-  const [bestStreak, setBestStreak] = useState(0);
-  const [hintsUsed, setHintsUsed] = useState(0);
-  const [showHint, setShowHint] = useState(false);
-  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
+  // Mode & configuration states
+  const [quizState, setQuizState] = useState<'setup' | 'playing' | 'completed'>('setup');
+  const [selectedTopic, setSelectedTopic] = useState<string>('all');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
+  const [questionCount, setQuestionCount] = useState<number>(20);
+  const [isTimed, setIsTimed] = useState<boolean>(false);
+  const [secondsPerQuestion] = useState<number>(30);
+
+  // Active quiz execution states
+  const [questions, setQuestions] = useState<BankQuestion[]>([]);
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [isAnswered, setIsAnswered] = useState(false);
+  const [isAnswered, setIsAnswered] = useState<boolean>(false);
+  const [score, setScore] = useState<number>(0);
+  const [streak, setStreak] = useState<number>(0);
+  const [bestStreak, setBestStreak] = useState<number>(0);
+  const [userAnswers, setUserAnswers] = useState<UserAnswerRecord[]>([]);
+  const [eliminatedOptions, setEliminatedOptions] = useState<number[]>([]);
+  const [showReviewList, setShowReviewList] = useState<boolean>(false);
 
-  const generateQuestion = useCallback((): Question => {
-    const targetIdx = Math.floor(Math.random() * ELEMENTS_DATA.length);
-    const target = ELEMENTS_DATA[targetIdx];
+  // Timer states
+  const [timeLeft, setTimeLeft] = useState<number>(30);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    const types = ['symbol', 'number', 'category', 'name', 'state', 'use', 'radius'];
-    const qType = types[Math.floor(Math.random() * types.length)];
+  // Loading & error
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-    let questionText = '';
-    let correctLabel = '';
-    let distractors: string[] = [];
-    let explanation = '';
-    let hint = '';
+  // Lifetime progress stats
+  const [lifetimeStats, setLifetimeStats] = useState({
+    quizzesCompleted: 0,
+    totalAnswered: 0,
+    totalCorrect: 0,
+    highestStreak: 0
+  });
 
-    if (qType === 'radius' && ATOMIC_RADII_PM[target.number] !== null) {
-      const radius = ATOMIC_RADII_PM[target.number];
-      questionText = `What is the approximate covalent/atomic radius of ${target.name} (${target.symbol})?`;
-      correctLabel = `${radius} pm`;
-      distractors = [
-        `${Math.round(radius! * 0.7)} pm`,
-        `${Math.round(radius! * 1.35)} pm`,
-        `${Math.round(radius! + 45)} pm`,
-      ];
-      explanation = `${target.name} (${target.symbol}) has an empirical atomic radius of ${radius} pm.`;
-      hint = `Atomic radii decrease left-to-right across a period and increase down a group. Period ${target.period}, Group ${target.group}.`;
-    } else if (qType === 'symbol') {
-      questionText = `What is the chemical symbol for ${target.name} (Atomic #${target.number})?`;
-      correctLabel = target.symbol;
-      const otherSymbols = ELEMENTS_DATA.filter((e) => e.number !== target.number)
-        .map((e) => e.symbol)
-        .sort(() => 0.5 - Math.random())
-        .slice(0, 3);
-      distractors = otherSymbols;
-      explanation = `The chemical symbol for ${target.name} is ${target.symbol}. It resides in Period ${target.period}, Group ${target.group}.`;
-      hint = `This element sits in the ${target.categoryName} family.`;
-    } else if (qType === 'number') {
-      questionText = `What is the atomic number (Z) of ${target.name} (${target.symbol})?`;
-      correctLabel = `${target.number}`;
-      const offsets = [-2, -1, 1, 2, 5, -5].sort(() => 0.5 - Math.random()).slice(0, 3);
-      distractors = offsets.map((o) => `${Math.max(1, Math.min(118, target.number + o))}`);
-      explanation = `${target.name} has atomic number Z=${target.number}, indicating ${target.number} protons in its nucleus.`;
-      hint = `It resides in Period ${target.period}, Block ${target.block.toUpperCase()}.`;
-    } else if (qType === 'category') {
-      questionText = `Which chemical category does ${target.name} (${target.symbol}) belong to?`;
-      correctLabel = target.categoryName;
-      const otherCats = Array.from(new Set(ELEMENTS_DATA.map((e) => e.categoryName)))
-        .filter((c) => c !== target.categoryName)
-        .sort(() => 0.5 - Math.random())
-        .slice(0, 3);
-      distractors = otherCats;
-      explanation = `${target.name} is categorized as a ${target.categoryName}.`;
-      hint = `It is located in Group ${target.group}, Period ${target.period}.`;
-    } else if (qType === 'state') {
-      questionText = `What is the standard physical state of ${target.name} (${target.symbol}) at room temperature (293 K)?`;
-      correctLabel = target.standardState.charAt(0).toUpperCase() + target.standardState.slice(1);
-      const allStates = ['Solid', 'Liquid', 'Gas', 'Synthetic'];
-      distractors = allStates.filter((s) => s.toLowerCase() !== target.standardState.toLowerCase()).slice(0, 3);
-      explanation = `At standard room temperature (20°C / 293 K), ${target.name} is a ${target.standardState}.`;
-      hint = `Melting point is ${target.meltingPointKelvin ? `${Math.round(target.meltingPointKelvin)} K` : 'synthetic'}.`;
-    } else if (qType === 'use' && target.commonUses && target.commonUses.length > 0) {
-      const targetUse = target.commonUses[0];
-      questionText = `Which element is commonly utilized for: "${targetUse}"?`;
-      correctLabel = `${target.name} (${target.symbol})`;
-      const otherElems = ELEMENTS_DATA.filter((e) => e.number !== target.number)
-        .sort(() => 0.5 - Math.random())
-        .slice(0, 3)
-        .map((e) => `${e.name} (${e.symbol})`);
-      distractors = otherElems;
-      explanation = `${target.name} is known for this application: ${targetUse}.`;
-      hint = `This element has atomic number Z=${target.number}.`;
-    } else {
-      // Name fallback
-      questionText = `Which chemical element is represented by the symbol "${target.symbol}"?`;
-      correctLabel = target.name;
-      const otherNames = ELEMENTS_DATA.filter((e) => e.number !== target.number)
-        .map((e) => e.name)
-        .sort(() => 0.5 - Math.random())
-        .slice(0, 3);
-      distractors = otherNames;
-      explanation = `"${target.symbol}" is the IUPAC standard symbol for ${target.name}.`;
-      hint = `Category: ${target.categoryName}. Atomic weight is approx ${Math.round(target.atomicMassValue)} u.`;
-    }
+  // Load lifetime stats on open
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('elements_lab_quiz_stats');
+      if (saved) {
+        setLifetimeStats(JSON.parse(saved));
+      }
+    } catch {}
+  }, [isOpen]);
 
-    // Shuffle options
-    const allOptions: Option[] = [
-      { label: correctLabel, isCorrect: true },
-      ...distractors.map((d) => ({ label: d, isCorrect: false })),
-    ].sort(() => 0.5 - Math.random());
-
-    return {
-      type: qType,
-      target,
-      questionText,
-      options: allOptions,
-      explanation,
-      hint,
-    };
+  const updateLifetimeStats = useCallback((correctDelta: number, totalDelta: number, newStreak: number) => {
+    setLifetimeStats(prev => {
+      const updated = {
+        quizzesCompleted: prev.quizzesCompleted + 1,
+        totalAnswered: prev.totalAnswered + totalDelta,
+        totalCorrect: prev.totalCorrect + correctDelta,
+        highestStreak: Math.max(prev.highestStreak, newStreak)
+      };
+      try {
+        localStorage.setItem('elements_lab_quiz_stats', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
   }, []);
 
-  // Initialize first question on open
+  // Timer management during active quiz
   useEffect(() => {
-    if (isOpen && !currentQuestion) {
-      setCurrentQuestion(generateQuestion());
-      setSelectedAnswer(null);
-      setIsAnswered(false);
-      setShowHint(false);
+    if (quizState !== 'playing' || !isTimed || isAnswered) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      return;
     }
-  }, [isOpen, currentQuestion, generateQuestion]);
 
-  if (!isOpen) return null;
+    timerRef.current = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          handleTimeExpire();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
 
-  const handleSelectAnswer = (idx: number) => {
-    if (isAnswered || !currentQuestion) return;
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [quizState, isTimed, isAnswered, currentIndex]);
 
-    setSelectedAnswer(idx);
+  // Handle timeout on a question
+  const handleTimeExpire = () => {
+    if (isAnswered || !questions[currentIndex]) return;
     setIsAnswered(true);
-    setTotalAnswered((prev) => prev + 1);
+    setStreak(0);
 
-    const isCorrect = currentQuestion.options[idx].isCorrect;
+    const currQ = questions[currentIndex];
+    setUserAnswers(prev => [
+      ...prev,
+      { question: currQ, selectedOptionIndex: -1, isCorrect: false }
+    ]);
+  };
+
+  // Generate fallback questions if API is unavailable
+  const generateFallbackQuestions = (count: number): BankQuestion[] => {
+    const list: BankQuestion[] = [];
+    for (let i = 0; i < count; i++) {
+      const el = ELEMENTS_DATA[Math.floor(Math.random() * ELEMENTS_DATA.length)];
+      const others = ELEMENTS_DATA.filter(e => e.number !== el.number).slice(0, 3);
+      list.push({
+        id: `FALLBACK-${i + 1}`,
+        topic: 'Periodic Table and element properties',
+        difficulty: 'Easy',
+        format: 'Multiple Choice',
+        question: `What is the chemical symbol for the element ${el.name} (Atomic number ${el.number})?`,
+        options: [el.symbol, others[0].symbol, others[1].symbol, others[2].symbol].sort(() => 0.5 - Math.random()),
+        correctAnswer: el.symbol,
+        explanation: `${el.name} is represented by the chemical symbol "${el.symbol}". It resides in Period ${el.period}, Group ${el.group}.`,
+        formula: null
+      });
+    }
+    return list;
+  };
+
+  // Start new quiz
+  const handleStartQuiz = async (customQuestions?: BankQuestion[]) => {
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    let loadedQuestions: BankQuestion[] = [];
+
+    if (customQuestions && customQuestions.length > 0) {
+      loadedQuestions = customQuestions;
+    } else {
+      try {
+        const queryParams = new URLSearchParams({
+          count: String(questionCount),
+          topic: selectedTopic,
+          difficulty: selectedDifficulty
+        });
+
+        const res = await fetch(`/api/quiz/questions?${queryParams.toString()}`);
+        if (!res.ok) throw new Error(`Server returned status ${res.status}`);
+        const data = await res.json();
+        if (data.questions && data.questions.length > 0) {
+          loadedQuestions = data.questions;
+        } else {
+          loadedQuestions = generateFallbackQuestions(questionCount);
+        }
+      } catch (err) {
+        console.warn('Could not fetch from quiz API, using local question generator fallback:', err);
+        loadedQuestions = generateFallbackQuestions(questionCount);
+      }
+    }
+
+    setQuestions(loadedQuestions);
+    setCurrentIndex(0);
+    setSelectedAnswer(null);
+    setIsAnswered(false);
+    setScore(0);
+    setStreak(0);
+    setBestStreak(0);
+    setUserAnswers([]);
+    setEliminatedOptions([]);
+    setTimeLeft(secondsPerQuestion);
+    setQuizState('playing');
+    setIsLoading(false);
+  };
+
+  // Select an option
+  const handleSelectOption = (optIndex: number) => {
+    if (isAnswered || !questions[currentIndex]) return;
+
+    setSelectedAnswer(optIndex);
+    setIsAnswered(true);
+
+    const currQ = questions[currentIndex];
+    const isCorrect = currQ.options[optIndex] === currQ.correctAnswer;
+
     if (isCorrect) {
-      setScore((prev) => prev + 1);
-      setStreak((prev) => {
-        const next = prev + 1;
-        setBestStreak((b) => Math.max(b, next));
+      setScore(s => s + 1);
+      setStreak(s => {
+        const next = s + 1;
+        setBestStreak(b => Math.max(b, next));
         return next;
       });
     } else {
       setStreak(0);
     }
+
+    setUserAnswers(prev => [
+      ...prev,
+      { question: currQ, selectedOptionIndex: optIndex, isCorrect }
+    ]);
   };
 
-  const handleNextQuestion = () => {
-    setCurrentQuestion(generateQuestion());
-    setSelectedAnswer(null);
-    setIsAnswered(false);
-    setShowHint(false);
-  };
-
-  const handleResetQuiz = () => {
-    setScore(0);
-    setTotalAnswered(0);
-    setStreak(0);
-    setHintsUsed(0);
-    setCurrentQuestion(generateQuestion());
-    setSelectedAnswer(null);
-    setIsAnswered(false);
-    setShowHint(false);
-  };
-
+  // 50/50 hint
   const handleUseHint = () => {
-    if (showHint || !currentQuestion || isAnswered) return;
-    setShowHint(true);
-    setHintsUsed((prev) => prev + 1);
+    if (isAnswered || !questions[currentIndex] || eliminatedOptions.length > 0) return;
+    const currQ = questions[currentIndex];
+    const wrongIndices = currQ.options
+      .map((opt, i) => (opt !== currQ.correctAnswer ? i : -1))
+      .filter(i => i !== -1);
 
-    // Also eliminate one wrong option
-    const wrongIdxs = currentQuestion.options
-      .map((opt, i) => (!opt.isCorrect ? i : -1))
-      .filter((i) => i !== -1);
-    if (wrongIdxs.length > 0) {
-      const toEliminate = wrongIdxs[Math.floor(Math.random() * wrongIdxs.length)];
-      setCurrentQuestion((prev) => {
-        if (!prev) return null;
-        const newOpts = [...prev.options];
-        newOpts[toEliminate] = { ...newOpts[toEliminate], eliminated: true };
-        return { ...prev, options: newOpts };
-      });
+    const shuffled = wrongIndices.sort(() => 0.5 - Math.random());
+    setEliminatedOptions(shuffled.slice(0, 2));
+  };
+
+  // Next question or finish
+  const handleNext = () => {
+    if (currentIndex + 1 < questions.length) {
+      setCurrentIndex(prev => prev + 1);
+      setSelectedAnswer(null);
+      setIsAnswered(false);
+      setEliminatedOptions([]);
+      setTimeLeft(secondsPerQuestion);
+    } else {
+      // Finished
+      setQuizState('completed');
+      updateLifetimeStats(score, questions.length, bestStreak);
     }
   };
 
-  const accuracy = totalAnswered > 0 ? Math.round((score / totalAnswered) * 100) : 100;
+  // Retry missed questions
+  const handleRetryIncorrect = () => {
+    const incorrect = userAnswers.filter(a => !a.isCorrect).map(a => a.question);
+    if (incorrect.length > 0) {
+      handleStartQuiz(incorrect);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  const currentQ = questions[currentIndex];
+  const progressPercent = questions.length > 0 ? Math.round(((currentIndex + 1) / questions.length) * 100) : 0;
+  const currentAccuracy = userAnswers.length > 0 ? Math.round((score / userAnswers.length) * 100) : 100;
+  const finalAccuracy = questions.length > 0 ? Math.round((score / questions.length) * 100) : 0;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md overflow-y-auto font-sans select-none"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="w-full max-w-2xl flex flex-col rounded-2xl bg-slate-950 border border-cyan-500/30 text-slate-100 shadow-[0_16px_48px_rgba(0,0,0,0.7)] overflow-hidden">
-        {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-800 bg-slate-900/80 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md animate-fade-in">
+      <div className="relative w-full max-w-4xl max-h-[92vh] flex flex-col rounded-2xl bg-[#090d1e] border border-cyan-500/25 shadow-[0_0_50px_rgba(6,182,212,0.15)] overflow-hidden text-slate-100">
+        
+        {/* Top Modal Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-cyan-500/20 bg-[#0c1228]/90">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-violet-500/20 text-violet-400 border border-violet-500/40">
-              <Award className="w-5 h-5" />
+            <div className="p-2 rounded-xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 text-cyan-400">
+              <Trophy className="w-5 h-5 text-cyan-300" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
-                Elements Science Quiz Challenge
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold tracking-wide text-white">
+                  Chemistry Quiz Challenge
+                </h2>
+                <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-cyan-950/80 text-cyan-300 border border-cyan-500/30">
+                  100,000 Question Bank
+                </span>
+              </div>
               <p className="text-xs text-slate-400">
-                Test your mastery of chemical symbols, configurations, states & trends
+                Verified educational questions covering all 28 chemistry disciplines
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleResetQuiz}
-              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-all cursor-pointer"
-              title="Restart Quiz"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </button>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-2 rounded-xl bg-slate-800 hover:bg-rose-950/80 text-slate-300 hover:text-rose-300 border border-slate-700 hover:border-rose-500/50 transition-all cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors"
+            title="Close quiz (Esc)"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        {/* Live Scorebar */}
-        <div className="px-5 py-3 border-b border-slate-800/80 bg-slate-900/40 grid grid-cols-4 gap-2 text-center text-xs font-mono">
-          <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800">
-            <span className="text-[10px] text-slate-400 uppercase block">Score</span>
-            <span className="text-sm font-bold text-cyan-400">{score} / {totalAnswered}</span>
-          </div>
-          <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800">
-            <span className="text-[10px] text-slate-400 uppercase block">Accuracy</span>
-            <span className="text-sm font-bold text-emerald-400">{accuracy}%</span>
-          </div>
-          <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800">
-            <span className="text-[10px] text-slate-400 uppercase block flex items-center justify-center gap-1">
-              <Flame className="w-3 h-3 text-amber-400" /> Streak
-            </span>
-            <span className="text-sm font-bold text-amber-400">{streak} (Best: {bestStreak})</span>
-          </div>
-          <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800">
-            <span className="text-[10px] text-slate-400 uppercase block">Hints</span>
-            <span className="text-sm font-bold text-violet-400">{hintsUsed}</span>
-          </div>
-        </div>
+        {/* Modal Body */}
+        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
 
-        {/* Question Body */}
-        {currentQuestion && (
-          <div className="p-5 sm:p-6 space-y-5">
-            {/* Question Heading */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs font-mono text-cyan-400">
-                <span className="uppercase font-bold tracking-wider">
-                  QUESTION #{totalAnswered + 1} // {currentQuestion.type.toUpperCase()}
-                </span>
-                {!isAnswered && (
-                  <button
-                    type="button"
-                    onClick={handleUseHint}
-                    disabled={showHint}
-                    className={`inline-flex items-center gap-1 text-[11px] font-mono px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
-                      showHint
-                        ? 'bg-amber-950/50 text-amber-300 border-amber-500/40'
-                        : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
-                    }`}
-                  >
-                    <Lightbulb className="w-3 h-3 text-amber-400" />
-                    <span>{showHint ? 'Hint Revealed' : 'Get Hint (-1 50/50)'}</span>
-                  </button>
-                )}
+          {/* 1. SETUP SCREEN */}
+          {quizState === 'setup' && (
+            <div className="space-y-6 animate-fade-in">
+              {/* Highlight Banner */}
+              <div className="p-4 rounded-xl bg-gradient-to-r from-cyan-950/40 via-purple-950/30 to-blue-950/40 border border-cyan-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-cyan-300 text-sm font-semibold">
+                    <Sparkles className="w-4 h-4 text-cyan-400" />
+                    Complete Scientific Question Bank Active
+                  </div>
+                  <p className="text-xs text-slate-300 leading-relaxed max-w-xl">
+                    Configure your personalized test. Choose from 28 specialized chemistry topics or challenge yourself with comprehensive mixed adaptive questions.
+                  </p>
+                </div>
+                <div className="flex items-center gap-4 text-xs font-mono">
+                  <div className="text-center px-3 py-1.5 rounded-lg bg-black/40 border border-cyan-500/20">
+                    <div className="text-cyan-300 font-bold text-sm">100,000</div>
+                    <div className="text-slate-400 text-[10px]">Verified Questions</div>
+                  </div>
+                  <div className="text-center px-3 py-1.5 rounded-lg bg-black/40 border border-purple-500/20">
+                    <div className="text-purple-300 font-bold text-sm">28</div>
+                    <div className="text-slate-400 text-[10px]">Topics</div>
+                  </div>
+                </div>
               </div>
 
-              <h3 className="text-lg sm:text-xl font-bold text-white leading-snug">
-                {currentQuestion.questionText}
-              </h3>
+              {/* Selection Controls Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                
+                {/* Topic Selector */}
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                    <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
+                    Chemistry Topic
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={selectedTopic}
+                      onChange={(e) => setSelectedTopic(e.target.value)}
+                      className="w-full appearance-none px-3.5 py-2.5 rounded-xl bg-[#0e1633] border border-cyan-500/30 text-white text-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition pr-9"
+                    >
+                      <option value="all">🌟 All 28 Chemistry Topics (Mixed Bank)</option>
+                      {QUIZ_TOPICS.map((topic, i) => (
+                        <option key={topic} value={topic}>
+                          {i + 1}. {topic}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400 pointer-events-none" />
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    {selectedTopic === 'all'
+                      ? 'Queries drawn randomly across all 28 sub-disciplines'
+                      : `Targeted exclusively on ${selectedTopic}`}
+                  </p>
+                </div>
 
-              {showHint && (
-                <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-500/30 text-amber-200 text-xs flex items-start gap-2 animate-in fade-in">
-                  <Lightbulb className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                  <span>{currentQuestion.hint}</span>
+                {/* Difficulty Selector */}
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                    <Layers className="w-3.5 h-3.5 text-purple-400" />
+                    Difficulty Tier
+                  </label>
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedDifficulty('all')}
+                      className={`px-2 py-2 rounded-lg text-xs font-medium border transition-all ${
+                        selectedDifficulty === 'all'
+                          ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.2)]'
+                          : 'bg-[#0e1633] border-slate-700/60 text-slate-400 hover:border-slate-500'
+                      }`}
+                    >
+                      Mixed
+                    </button>
+                    {DIFFICULTIES.map(diff => (
+                      <button
+                        key={diff}
+                        type="button"
+                        onClick={() => setSelectedDifficulty(diff)}
+                        className={`px-2 py-2 rounded-lg text-xs font-medium border transition-all ${
+                          selectedDifficulty === diff
+                            ? 'bg-purple-500/20 border-purple-400 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.2)]'
+                            : 'bg-[#0e1633] border-slate-700/60 text-slate-400 hover:border-slate-500'
+                        }`}
+                      >
+                        {diff}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    {selectedDifficulty === 'all' ? 'Adaptive question challenge across all competencies' : `Filtered to ${selectedDifficulty} level questions`}
+                  </p>
+                </div>
+
+                {/* Question Count Selector */}
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                    <ListFilter className="w-3.5 h-3.5 text-cyan-400" />
+                    Questions per Quiz
+                  </label>
+                  <div className="grid grid-cols-5 gap-2">
+                    {QUESTION_COUNTS.map(count => (
+                      <button
+                        key={count}
+                        type="button"
+                        onClick={() => setQuestionCount(count)}
+                        className={`py-2 rounded-xl text-xs font-semibold border transition-all ${
+                          questionCount === count
+                            ? 'bg-cyan-500/25 border-cyan-400 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.2)]'
+                            : 'bg-[#0e1633] border-slate-700/60 text-slate-400 hover:border-slate-500 hover:text-white'
+                        }`}
+                      >
+                        {count} Qs
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Quiz Mode (Practice vs Timed) */}
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                    <Timer className="w-3.5 h-3.5 text-yellow-400" />
+                    Quiz Mode
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsTimed(false)}
+                      className={`p-2.5 rounded-xl text-xs font-medium border text-left transition-all ${
+                        !isTimed
+                          ? 'bg-cyan-500/20 border-cyan-400 text-cyan-200'
+                          : 'bg-[#0e1633] border-slate-700/60 text-slate-400 hover:border-slate-500'
+                      }`}
+                    >
+                      <div className="font-semibold text-white">📖 Practice Mode</div>
+                      <div className="text-[11px] text-slate-400 mt-0.5">Untimed, relaxed learning</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsTimed(true)}
+                      className={`p-2.5 rounded-xl text-xs font-medium border text-left transition-all ${
+                        isTimed
+                          ? 'bg-yellow-500/20 border-yellow-400 text-yellow-200'
+                          : 'bg-[#0e1633] border-slate-700/60 text-slate-400 hover:border-slate-500'
+                      }`}
+                    >
+                      <div className="font-semibold text-white">⚡ Timed Challenge</div>
+                      <div className="text-[11px] text-slate-400 mt-0.5">30s per question countdown</div>
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Start Quiz Action */}
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-800">
+                <div className="flex items-center gap-4 text-xs text-slate-400">
+                  <div className="flex items-center gap-1.5">
+                    <BarChart3 className="w-4 h-4 text-cyan-400" />
+                    <span>Completed: <strong>{lifetimeStats.quizzesCompleted}</strong></span>
+                  </div>
+                  <div>•</div>
+                  <div>Answered: <strong>{lifetimeStats.totalAnswered}</strong></div>
+                  <div>•</div>
+                  <div>Best Streak: <strong>{lifetimeStats.highestStreak}</strong></div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleStartQuiz()}
+                  disabled={isLoading}
+                  className="w-full sm:w-auto px-8 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white font-bold text-sm shadow-[0_0_25px_rgba(6,182,212,0.35)] flex items-center justify-center gap-2 transition-all transform active:scale-95 disabled:opacity-50"
+                >
+                  <Play className="w-4 h-4 fill-white" />
+                  {isLoading ? 'Loading Questions...' : `Launch ${questionCount}-Question Quiz`}
+                </button>
+              </div>
+
+              {errorMessage && (
+                <div className="p-3 rounded-lg bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs">
+                  {errorMessage}
                 </div>
               )}
             </div>
+          )}
 
-            {/* Multiple Choice Options */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {currentQuestion.options.map((opt, idx) => {
-                const isSelected = selectedAnswer === idx;
-                let optStyle = 'bg-slate-900/60 border-slate-800 text-slate-200 hover:border-cyan-500/50 hover:bg-slate-800/80';
+          {/* 2. ACTIVE QUIZ PLAYING SCREEN */}
+          {quizState === 'playing' && currentQ && (
+            <div className="space-y-5 animate-fade-in">
+              {/* Progress & Header */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs font-semibold">
+                  <div className="flex items-center gap-2">
+                    <span className="text-cyan-400 font-mono">
+                      Question {currentIndex + 1} of {questions.length}
+                    </span>
+                    <span className="text-slate-600">•</span>
+                    <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700/60 text-[11px]">
+                      {currentQ.topic}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-purple-950/70 text-purple-300 border border-purple-500/30 text-[11px]">
+                      {currentQ.difficulty}
+                    </span>
+                  </div>
 
-                if (isAnswered) {
-                  if (opt.isCorrect) {
-                    optStyle = 'bg-emerald-950/80 border-emerald-500 text-emerald-200 shadow-[0_0_15px_rgba(16,185,129,0.3)]';
-                  } else if (isSelected) {
-                    optStyle = 'bg-rose-950/80 border-rose-500 text-rose-200';
-                  } else {
-                    optStyle = 'bg-slate-950/40 border-slate-900 text-slate-600 opacity-40';
-                  }
-                } else if (opt.eliminated) {
-                  optStyle = 'bg-slate-950/40 border-slate-900 text-slate-600 line-through opacity-30 pointer-events-none';
-                }
-
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    disabled={isAnswered || opt.eliminated}
-                    onClick={() => handleSelectAnswer(idx)}
-                    className={`p-4 rounded-xl border text-left font-sans text-sm font-semibold transition-all flex items-center justify-between cursor-pointer ${optStyle}`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <span className="w-6 h-6 rounded-lg bg-slate-950 border border-slate-800 font-mono text-xs flex items-center justify-center text-slate-400">
-                        {String.fromCharCode(65 + idx)}
-                      </span>
-                      <span>{opt.label}</span>
-                    </div>
-
-                    {isAnswered && opt.isCorrect && (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  {/* Timer & Streak */}
+                  <div className="flex items-center gap-3">
+                    {streak > 1 && (
+                      <div className="flex items-center gap-1 text-amber-400 font-bold font-mono">
+                        <Flame className="w-4 h-4 fill-amber-400 text-amber-400" />
+                        <span>{streak}x streak</span>
+                      </div>
                     )}
-                    {isAnswered && isSelected && !opt.isCorrect && (
-                      <XCircle className="w-4 h-4 text-rose-400 shrink-0" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
 
-            {/* Explanation & Next Actions */}
-            {isAnswered && (
-              <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-3 animate-in fade-in">
-                <div className="flex items-start gap-2 text-xs text-slate-300">
-                  <Sparkles className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                  <p className="leading-relaxed">{currentQuestion.explanation}</p>
+                    {isTimed && (
+                      <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-mono font-bold text-xs ${
+                        timeLeft <= 5
+                          ? 'bg-rose-950/80 text-rose-300 border border-rose-500/50 animate-pulse'
+                          : 'bg-slate-800 text-slate-200 border border-slate-700'
+                      }`}>
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>{timeLeft}s</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onInspectElement(currentQuestion.target);
-                      onClose();
-                    }}
-                    className="inline-flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 font-medium cursor-pointer"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>Inspect #{currentQuestion.target.number} {currentQuestion.target.name} Details</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleNextQuestion}
-                    className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-cyan-400 to-teal-300 text-slate-950 hover:from-cyan-300 hover:to-teal-200 transition-all cursor-pointer shadow-md"
-                  >
-                    <span>Next Question</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
+                {/* Progress Bar */}
+                <div className="h-1.5 w-full bg-slate-800/80 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all duration-300"
+                    style={{ width: `${progressPercent}%` }}
+                  />
                 </div>
               </div>
-            )}
-          </div>
-        )}
+
+              {/* Question Box */}
+              <div className="p-5 rounded-2xl bg-[#0e1633] border border-cyan-500/20 shadow-lg space-y-4">
+                <div className="text-base sm:text-lg font-medium text-white leading-relaxed">
+                  {currentQ.question}
+                </div>
+
+                {currentQ.formula && (
+                  <div className="inline-block px-3 py-1.5 rounded-lg bg-black/40 border border-cyan-500/30 font-mono text-xs text-cyan-300">
+                    Formula: {currentQ.formula}
+                  </div>
+                )}
+              </div>
+
+              {/* Options Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {currentQ.options.map((opt, idx) => {
+                  const isEliminated = eliminatedOptions.includes(idx);
+                  const isSelected = selectedAnswer === idx;
+                  const isCorrectAnswer = opt === currentQ.correctAnswer;
+
+                  let btnStyle = 'bg-[#0e1633] border-slate-700/60 text-slate-200 hover:border-cyan-400 hover:bg-slate-800/60';
+
+                  if (isAnswered) {
+                    if (isCorrectAnswer) {
+                      btnStyle = 'bg-emerald-950/60 border-emerald-500 text-emerald-200 shadow-[0_0_15px_rgba(16,185,129,0.25)]';
+                    } else if (isSelected && !isCorrectAnswer) {
+                      btnStyle = 'bg-rose-950/60 border-rose-500 text-rose-200';
+                    } else {
+                      btnStyle = 'bg-[#090d1e] border-slate-800 text-slate-500 opacity-60';
+                    }
+                  } else if (isEliminated) {
+                    btnStyle = 'opacity-30 line-through pointer-events-none border-slate-800 text-slate-600 bg-black/20';
+                  }
+
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      disabled={isAnswered || isEliminated}
+                      onClick={() => handleSelectOption(idx)}
+                      className={`p-4 rounded-xl border text-left font-medium text-sm transition-all flex items-start justify-between gap-3 ${btnStyle}`}
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-mono bg-black/40 border border-slate-700 text-slate-400 shrink-0 mt-0.5">
+                          {String.fromCharCode(65 + idx)}
+                        </span>
+                        <span>{opt}</span>
+                      </div>
+
+                      {isAnswered && isCorrectAnswer && (
+                        <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                      )}
+                      {isAnswered && isSelected && !isCorrectAnswer && (
+                        <XCircle className="w-5 h-5 text-rose-400 shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Instant Explanation Panel */}
+              {isAnswered && (
+                <div className="p-4 rounded-xl bg-gradient-to-r from-cyan-950/30 to-purple-950/30 border border-cyan-500/30 space-y-2 animate-fade-in">
+                  <div className="flex items-center gap-2 text-xs font-bold text-cyan-300 uppercase tracking-wider">
+                    <Sparkles className="w-4 h-4 text-cyan-400" />
+                    Explanation
+                  </div>
+                  <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                    {currentQ.explanation}
+                  </p>
+                </div>
+              )}
+
+              {/* Action Bottom Bar */}
+              <div className="flex items-center justify-between pt-2">
+                <div>
+                  {!isAnswered && eliminatedOptions.length === 0 && (
+                    <button
+                      type="button"
+                      onClick={handleUseHint}
+                      className="px-3 py-1.5 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-medium hover:bg-amber-500/25 flex items-center gap-1.5 transition"
+                    >
+                      <Lightbulb className="w-3.5 h-3.5" />
+                      50 / 50 Hint
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="text-xs font-mono text-slate-400">
+                    Score: <span className="text-cyan-300 font-bold">{score}</span> / {userAnswers.length} ({currentAccuracy}%)
+                  </div>
+
+                  {isAnswered && (
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white font-bold text-xs shadow-[0_0_20px_rgba(6,182,212,0.3)] flex items-center gap-2 transition"
+                    >
+                      <span>{currentIndex + 1 < questions.length ? 'Next Question' : 'View Results'}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 3. RESULTS & REVIEW SCREEN */}
+          {quizState === 'completed' && (
+            <div className="space-y-6 animate-fade-in text-center py-4">
+              {/* Score Display Card */}
+              <div className="p-6 rounded-2xl bg-[#0e1633] border border-cyan-500/30 max-w-lg mx-auto space-y-4 shadow-xl">
+                <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-400 flex items-center justify-center text-cyan-300 shadow-[0_0_25px_rgba(6,182,212,0.3)]">
+                  <Award className="w-8 h-8" />
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-bold text-white">Quiz Challenge Complete!</h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    {finalAccuracy >= 80 ? '🌟 Exceptional performance! Outstanding scientific knowledge.' : finalAccuracy >= 60 ? '👍 Solid chemistry proficiency. Great work!' : '📚 Keep practicing to master these chemical concepts!'}
+                  </p>
+                </div>
+
+                {/* Score Stats Grid */}
+                <div className="grid grid-cols-3 gap-3 pt-2 text-center">
+                  <div className="p-3 rounded-xl bg-black/40 border border-cyan-500/20">
+                    <div className="text-xl font-bold text-cyan-300 font-mono">{score} / {questions.length}</div>
+                    <div className="text-[11px] text-slate-400 uppercase mt-0.5">Score</div>
+                  </div>
+                  <div className="p-3 rounded-xl bg-black/40 border border-purple-500/20">
+                    <div className="text-xl font-bold text-purple-300 font-mono">{finalAccuracy}%</div>
+                    <div className="text-[11px] text-slate-400 uppercase mt-0.5">Accuracy</div>
+                  </div>
+                  <div className="p-3 rounded-xl bg-black/40 border border-amber-500/20">
+                    <div className="text-xl font-bold text-amber-300 font-mono">{bestStreak}x</div>
+                    <div className="text-[11px] text-slate-400 uppercase mt-0.5">Best Streak</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                {userAnswers.some(a => !a.isCorrect) && (
+                  <button
+                    type="button"
+                    onClick={handleRetryIncorrect}
+                    className="px-5 py-2.5 rounded-xl bg-purple-600/30 border border-purple-400 text-purple-200 hover:bg-purple-600/50 text-xs font-semibold flex items-center gap-2 transition"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Retry Incorrect Questions ({userAnswers.filter(a => !a.isCorrect).length})
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setShowReviewList(prev => !prev)}
+                  className="px-5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 hover:bg-slate-700 text-xs font-semibold flex items-center gap-2 transition"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  {showReviewList ? 'Hide Answer Review' : 'Review All Answers'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setQuizState('setup')}
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white font-bold text-xs shadow-lg flex items-center gap-2 transition"
+                >
+                  <Play className="w-4 h-4 fill-white" />
+                  New Custom Quiz
+                </button>
+              </div>
+
+              {/* Detailed Review List */}
+              {showReviewList && (
+                <div className="space-y-4 text-left max-w-2xl mx-auto pt-4 border-t border-slate-800 animate-fade-in">
+                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                    <ListFilter className="w-4 h-4 text-cyan-400" />
+                    Itemized Question Review
+                  </h4>
+
+                  <div className="space-y-3">
+                    {userAnswers.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className={`p-4 rounded-xl border space-y-2 ${
+                          item.isCorrect
+                            ? 'bg-emerald-950/20 border-emerald-500/30'
+                            : 'bg-rose-950/20 border-rose-500/30'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3 text-xs">
+                          <span className="font-semibold text-white">
+                            #{idx + 1}. {item.question.question}
+                          </span>
+                          {item.isCorrect ? (
+                            <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 font-semibold text-[10px]">
+                              Correct
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded bg-rose-950 text-rose-300 font-semibold text-[10px]">
+                              Incorrect
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="text-xs space-y-1">
+                          {!item.isCorrect && (
+                            <div className="text-rose-300">
+                              Your answer: <strong>{item.selectedOptionIndex >= 0 ? item.question.options[item.selectedOptionIndex] : 'Time expired'}</strong>
+                            </div>
+                          )}
+                          <div className="text-emerald-300">
+                            Correct answer: <strong>{item.question.correctAnswer}</strong>
+                          </div>
+                        </div>
+
+                        <p className="text-[11px] text-slate-300 pt-1 border-t border-slate-800/80">
+                          {item.question.explanation}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+        </div>
       </div>
     </div>
   );

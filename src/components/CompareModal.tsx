@@ -1,8 +1,34 @@
-import React, { useState } from 'react';
-import { X, Scale, ArrowRightLeft, Plus, Trash2 } from 'lucide-react';
-import { type ElementData, ELEMENTS_DATA, CATEGORIES } from '../data/elements';
-import { formatTemp } from '../utils/helpers';
-import { ATOMIC_RADII_PM } from '../data/trends';
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  X,
+  Scale,
+  ArrowRightLeft,
+  Plus,
+  Trash2,
+  Shuffle,
+  RotateCcw,
+  Copy,
+  Download,
+  Share2,
+  Bookmark,
+  Check,
+  Sparkles,
+  BarChart3,
+  Table as TableIcon,
+  Flame,
+  LayoutGrid
+} from 'lucide-react';
+import { type ElementData, ELEMENTS_DATA } from '../data/elements';
+import { ElementSelectorCard } from './compare/ElementSelectorCard';
+import { VisualMetricBars } from './compare/VisualMetricBars';
+import { AdvancedVisualAnalytics } from './compare/AdvancedVisualAnalytics';
+import { DetailedComparisonTable } from './compare/DetailedComparisonTable';
+import { ComparisonInsights } from './compare/ComparisonInsights';
+import {
+  generateComparisonSummary,
+  exportComparisonToCSV,
+  copyComparisonToClipboard,
+} from './compare/compareUtils';
 
 interface CompareModalProps {
   isOpen: boolean;
@@ -10,9 +36,20 @@ interface CompareModalProps {
   element1: ElementData | null;
   element2: ElementData | null;
   darkMode: boolean;
-  onSelectElement1: (element: ElementData) => void;
-  onSelectElement2: (element: ElementData) => void;
+  onSelectElement1: (element: ElementData | null) => void;
+  onSelectElement2: (element: ElementData | null) => void;
 }
+
+type TabView = 'all' | 'metrics' | 'analytics' | 'table' | 'insights';
+
+const PRESET_COMPARISONS = [
+  { name: 'Hydrogen vs Carbon (Organic Baseline)', numbers: [1, 6] },
+  { name: 'Sodium vs Chlorine (Ionic Bonding)', numbers: [11, 17] },
+  { name: 'Carbon vs Silicon (Group 14 Analogues)', numbers: [6, 14] },
+  { name: 'Iron vs Gold (Transition Metals)', numbers: [26, 79] },
+  { name: 'Oxygen vs Nitrogen (Atmospheric Life)', numbers: [8, 7] },
+  { name: 'Lithium vs Sodium vs Potassium (Alkali Group)', numbers: [3, 11, 19] },
+];
 
 export const CompareModal: React.FC<CompareModalProps> = ({
   isOpen,
@@ -22,344 +59,529 @@ export const CompareModal: React.FC<CompareModalProps> = ({
   onSelectElement1,
   onSelectElement2,
 }) => {
-  const [element3, setElement3] = useState<ElementData | null>(ELEMENTS_DATA[7]); // Oxygen default for 3rd
+  // Elements state: support 2 or 3 elements (starts empty unless passed by user)
+  const [element3, setElement3] = useState<ElementData | null>(null);
   const [showThird, setShowThird] = useState<boolean>(false);
 
-  if (!isOpen) return null;
+  // Active view tab
+  const [activeTab, setActiveTab] = useState<TabView>('all');
 
-  const e1 = element1 || ELEMENTS_DATA[0]; // Hydrogen
-  const e2 = element2 || ELEMENTS_DATA[5]; // Carbon
-  const e3 = element3 || ELEMENTS_DATA[7]; // Oxygen
+  // Copy / Share feedback state
+  const [copiedFeedback, setCopiedFeedback] = useState(false);
+  const [sharedFeedback, setSharedFeedback] = useState(false);
 
-  const cat1 = CATEGORIES[e1.category] || CATEGORIES['unknown'];
-  const cat2 = CATEGORIES[e2.category] || CATEGORIES['unknown'];
-  const cat3 = CATEGORIES[e3.category] || CATEGORIES['unknown'];
+  // Saved favorites (persisted in localStorage)
+  const [favorites, setFavorites] = useState<Array<{ name: string; numbers: number[] }>>(() => {
+    try {
+      const saved = localStorage.getItem('elements_compare_favorites');
+      return saved ? JSON.parse(saved) : PRESET_COMPARISONS;
+    } catch {
+      return PRESET_COMPARISONS;
+    }
+  });
+  const [showFavoritesMenu, setShowFavoritesMenu] = useState(false);
 
-  const r1 = ATOMIC_RADII_PM[e1.number];
-  const r2 = ATOMIC_RADII_PM[e2.number];
-  const r3 = ATOMIC_RADII_PM[e3.number];
+  const activeElements = useMemo(() => {
+    const list: ElementData[] = [];
+    if (element1) list.push(element1);
+    if (element2) list.push(element2);
+    if (showThird && element3) list.push(element3);
+    return list;
+  }, [element1, element2, element3, showThird]);
 
-  const handleSwap12 = () => {
-    onSelectElement1(e2);
-    onSelectElement2(e1);
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  // Dynamic summary sentences derived from actual data
+  const comparisonSummary = useMemo(() => {
+    return generateComparisonSummary(activeElements);
+  }, [activeElements]);
+
+  // Swap elements 1 and 2
+  const handleSwap = () => {
+    onSelectElement1(element2);
+    onSelectElement2(element1);
   };
 
-  const rows = [
-    { label: 'Atomic Number (Z)', v1: e1.number, v2: e2.number, v3: e3.number },
-    { label: 'Standard Atomic Weight', v1: `${e1.atomicMass} u`, v2: `${e2.atomicMass} u`, v3: `${e3.atomicMass} u` },
-    { label: 'Chemical Category', v1: e1.categoryName, v2: e2.categoryName, v3: e3.categoryName, color1: cat1.color, color2: cat2.color, color3: cat3.color },
-    { label: 'Period / Group', v1: `P${e1.period} · G${e1.group}`, v2: `P${e2.period} · G${e2.group}`, v3: `P${e3.period} · G${e3.group}` },
-    { label: 'Orbital Block', v1: `${e1.block.toUpperCase()}-block`, v2: `${e2.block.toUpperCase()}-block`, v3: `${e3.block.toUpperCase()}-block` },
-    { label: 'Standard State', v1: e1.standardState, v2: e2.standardState, v3: e3.standardState, capitalize: true },
-    { label: 'Protons / Neutrons / Electrons', v1: `${e1.number}p / ${Math.round(e1.atomicMassValue) - e1.number}n / ${e1.number}e`, v2: `${e2.number}p / ${Math.round(e2.atomicMassValue) - e2.number}n / ${e2.number}e`, v3: `${e3.number}p / ${Math.round(e3.atomicMassValue) - e3.number}n / ${e3.number}e` },
-    { label: 'Atomic Radius', v1: r1 ? `${r1} pm` : 'N/A', v2: r2 ? `${r2} pm` : 'N/A', v3: r3 ? `${r3} pm` : 'N/A' },
-    { label: 'Electronegativity (Pauling)', v1: e1.electronegativity ?? 'N/A', v2: e2.electronegativity ?? 'N/A', v3: e3.electronegativity ?? 'N/A' },
-    { label: '1st Ionization Energy', v1: e1.ionizationEnergy ? `${e1.ionizationEnergy} kJ/mol` : 'N/A', v2: e2.ionizationEnergy ? `${e2.ionizationEnergy} kJ/mol` : 'N/A', v3: e3.ionizationEnergy ? `${e3.ionizationEnergy} kJ/mol` : 'N/A' },
-    { label: 'Density (at STP)', v1: e1.density ? `${e1.density} g/cm³` : 'N/A', v2: e2.density ? `${e2.density} g/cm³` : 'N/A', v3: e3.density ? `${e3.density} g/cm³` : 'N/A' },
-    { label: 'Melting Point', v1: formatTemp(e1.meltingPointKelvin, 'C'), v2: formatTemp(e2.meltingPointKelvin, 'C'), v3: formatTemp(e3.meltingPointKelvin, 'C') },
-    { label: 'Boiling Point', v1: formatTemp(e1.boilingPointKelvin, 'C'), v2: formatTemp(e2.boilingPointKelvin, 'C'), v3: formatTemp(e3.boilingPointKelvin, 'C') },
-    { label: 'Electron Configuration', v1: e1.electronConfigurationSemantic || e1.electronConfiguration, v2: e2.electronConfigurationSemantic || e2.electronConfiguration, v3: e3.electronConfigurationSemantic || e3.electronConfiguration },
-    { label: 'Shell Population (K-Q)', v1: e1.shells.join(' · '), v2: e2.shells.join(' · '), v3: e3.shells.join(' · ') },
-    { label: 'Discoverer', v1: e1.discoveredBy, v2: e2.discoveredBy, v3: e3.discoveredBy },
-  ];
+  // Reset: clear all selections and leave user to select
+  const handleReset = () => {
+    onSelectElement1(null);
+    onSelectElement2(null);
+    setElement3(null);
+    setShowThird(false);
+  };
 
-  // Visual comparison metric bars
-  const visualMetrics = [
-    {
-      name: 'Atomic Weight (u)',
-      val1: e1.atomicMassValue,
-      val2: e2.atomicMassValue,
-      val3: e3.atomicMassValue,
-      fmt1: `${e1.atomicMass} u`,
-      fmt2: `${e2.atomicMass} u`,
-      fmt3: `${e3.atomicMass} u`,
-    },
-    {
-      name: 'Atomic Radius (pm)',
-      val1: r1,
-      val2: r2,
-      val3: r3,
-      fmt1: r1 ? `${r1} pm` : 'N/A',
-      fmt2: r2 ? `${r2} pm` : 'N/A',
-      fmt3: r3 ? `${r3} pm` : 'N/A',
-    },
-    {
-      name: 'Electronegativity (Pauling)',
-      val1: e1.electronegativity,
-      val2: e2.electronegativity,
-      val3: e3.electronegativity,
-      fmt1: e1.electronegativity ? `${e1.electronegativity}` : 'N/A',
-      fmt2: e2.electronegativity ? `${e2.electronegativity}` : 'N/A',
-      fmt3: e3.electronegativity ? `${e3.electronegativity}` : 'N/A',
-    },
-    {
-      name: 'Ionization Energy (kJ/mol)',
-      val1: e1.ionizationEnergy,
-      val2: e2.ionizationEnergy,
-      val3: e3.ionizationEnergy,
-      fmt1: e1.ionizationEnergy ? `${e1.ionizationEnergy} kJ/mol` : 'N/A',
-      fmt2: e2.ionizationEnergy ? `${e2.ionizationEnergy} kJ/mol` : 'N/A',
-      fmt3: e3.ionizationEnergy ? `${e3.ionizationEnergy} kJ/mol` : 'N/A',
-    },
-    {
-      name: 'Density (g/cm³)',
-      val1: e1.density,
-      val2: e2.density,
-      val3: e3.density,
-      fmt1: e1.density ? `${e1.density} g/cm³` : 'N/A',
-      fmt2: e2.density ? `${e2.density} g/cm³` : 'N/A',
-      fmt3: e3.density ? `${e3.density} g/cm³` : 'N/A',
-    },
-    {
-      name: 'Melting Point (K)',
-      val1: e1.meltingPointKelvin,
-      val2: e2.meltingPointKelvin,
-      val3: e3.meltingPointKelvin,
-      fmt1: e1.meltingPointKelvin ? `${Math.round(e1.meltingPointKelvin)} K` : 'N/A',
-      fmt2: e2.meltingPointKelvin ? `${Math.round(e2.meltingPointKelvin)} K` : 'N/A',
-      fmt3: e3.meltingPointKelvin ? `${Math.round(e3.meltingPointKelvin)} K` : 'N/A',
-    },
-  ];
+  // Compare with Hydrogen shortcut
+  const handleCompareWithHydrogen = () => {
+    onSelectElement1(ELEMENTS_DATA[0]);
+  };
+
+  // Random comparison
+  const handleRandom = () => {
+    const pickRandom = (exclude: number[] = []) => {
+      const available = ELEMENTS_DATA.filter((el) => !exclude.includes(el.number));
+      return available[Math.floor(Math.random() * available.length)];
+    };
+
+    const r1 = pickRandom();
+    const r2 = pickRandom([r1.number]);
+    onSelectElement1(r1);
+    onSelectElement2(r2);
+
+    if (showThird) {
+      const r3 = pickRandom([r1.number, r2.number]);
+      setElement3(r3);
+    }
+  };
+
+  // Save current comparison as favorite
+  const handleSaveFavorite = () => {
+    const numbers = activeElements.map((e) => e.number);
+    const name = activeElements.map((e) => e.symbol).join(' vs ');
+    const exists = favorites.some((f) => f.numbers.join(',') === numbers.join(','));
+
+    let updated: Array<{ name: string; numbers: number[] }>;
+    if (exists) {
+      updated = favorites.filter((f) => f.numbers.join(',') !== numbers.join(','));
+    } else {
+      updated = [{ name, numbers }, ...favorites];
+    }
+
+    setFavorites(updated);
+    try {
+      localStorage.setItem('elements_compare_favorites', JSON.stringify(updated));
+    } catch {}
+  };
+
+  const isCurrentFavorite = useMemo(() => {
+    const currentKey = activeElements.map((e) => e.number).join(',');
+    return favorites.some((f) => f.numbers.join(',') === currentKey);
+  }, [activeElements, favorites]);
+
+  // Load a preset comparison
+  const handleLoadFavorite = (item: { numbers: number[] }) => {
+    const el1 = ELEMENTS_DATA.find((e) => e.number === item.numbers[0]);
+    const el2 = ELEMENTS_DATA.find((e) => e.number === item.numbers[1]);
+    const el3 = item.numbers[2] ? ELEMENTS_DATA.find((e) => e.number === item.numbers[2]) : null;
+
+    if (el1) onSelectElement1(el1);
+    if (el2) onSelectElement2(el2);
+    if (el3) {
+      setElement3(el3);
+      setShowThird(true);
+    } else {
+      setShowThird(false);
+    }
+    setShowFavoritesMenu(false);
+  };
+
+  // Copy results to clipboard
+  const handleCopy = async () => {
+    const success = await copyComparisonToClipboard(activeElements);
+    if (success) {
+      setCopiedFeedback(true);
+      setTimeout(() => setCopiedFeedback(false), 2000);
+    }
+  };
+
+  // Export results as CSV
+  const handleExport = () => {
+    exportComparisonToCSV(activeElements);
+  };
+
+  // Generate shareable link
+  const handleShare = () => {
+    const nums = activeElements.map((e) => e.number).join(',');
+    const url = new URL(window.location.href);
+    url.searchParams.set('compare', nums);
+    navigator.clipboard.writeText(url.toString());
+    setSharedFeedback(true);
+    setTimeout(() => setSharedFeedback(false), 2000);
+  };
+
+  if (!isOpen) return null;
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md overflow-y-auto font-sans select-none"
+      aria-labelledby="compare-matrix-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/90 backdrop-blur-md overflow-y-auto font-sans select-none"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-5xl max-h-[92vh] flex flex-col rounded-2xl bg-slate-950 border border-cyan-500/30 text-slate-100 shadow-[0_16px_48px_rgba(0,0,0,0.7)] overflow-hidden">
-        {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-800 bg-slate-900/80 flex items-center justify-between shrink-0">
+      <div className="w-full max-w-6xl max-h-[94vh] flex flex-col rounded-3xl bg-slate-950 border border-cyan-500/30 text-slate-100 shadow-[0_24px_80px_rgba(0,0,0,0.9),0_0_30px_rgba(6,182,212,0.15)] overflow-hidden my-auto">
+        {/* 1. Header with Gradient Accent & Scientific Actions */}
+        <div className="px-5 py-4 border-b border-slate-800 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 flex flex-wrap items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/40">
-              <Scale className="w-5 h-5" />
+            <div className="p-2.5 rounded-2xl bg-gradient-to-br from-cyan-500/25 to-violet-500/25 text-cyan-400 border border-cyan-500/40 shadow-inner">
+              <Scale className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
-                Element Property Comparison Matrix
-              </h2>
-              <p className="text-xs text-slate-400">
-                Compare {showThird ? '3 elements' : '2 elements'} side-by-side with metric difference charts
+              <div className="flex items-center gap-2">
+                <h2 id="compare-matrix-title" className="text-base sm:text-lg font-black text-white tracking-tight">
+                  Element Property Comparison Matrix
+                </h2>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 hidden sm:inline-block">
+                  Scientific Analyzer v3.0
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Explore and compare chemical properties interactively across {showThird ? '3 elements' : '2 elements'}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Quick Toolbar Actions */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {/* Toggle 3rd Element */}
             {!showThird ? (
               <button
                 type="button"
                 onClick={() => setShowThird(true)}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30 transition-all cursor-pointer"
+                title="Add 3rd element for three-way comparison"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Add 3rd Element</span>
+                <span className="hidden sm:inline">Add 3rd Element</span>
+                <span className="sm:hidden">+ 3rd</span>
               </button>
             ) : (
               <button
                 type="button"
                 onClick={() => setShowThird(false)}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-rose-950/60 text-rose-300 border border-rose-500/40 hover:bg-rose-900/60 transition-all cursor-pointer"
+                title="Remove 3rd element"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>Remove 3rd</span>
+                <span className="hidden sm:inline">Remove 3rd</span>
               </button>
             )}
 
+            {/* Swap Button */}
             <button
               type="button"
-              onClick={handleSwap12}
-              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-all cursor-pointer"
-              title="Swap element 1 and 2"
+              onClick={handleSwap}
+              className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 transition-colors cursor-pointer"
+              title="Quick Swap: Exchange Element 1 and Element 2"
+              aria-label="Swap elements"
             >
-              <ArrowRightLeft className="w-4 h-4" />
+              <ArrowRightLeft className="w-4 h-4 text-cyan-400" />
             </button>
 
+            {/* Random Comparison Button */}
+            <button
+              type="button"
+              onClick={handleRandom}
+              className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 transition-colors cursor-pointer"
+              title="Random Comparison: Pick exciting random atoms"
+              aria-label="Random comparison"
+            >
+              <Shuffle className="w-4 h-4 text-violet-400" />
+            </button>
+
+            {/* Compare with Hydrogen Shortcut */}
+            <button
+              type="button"
+              onClick={handleCompareWithHydrogen}
+              className="hidden md:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700/80 text-xs font-mono transition-colors cursor-pointer"
+              title="Compare current element with Hydrogen"
+            >
+              <span>+ H (Z=1)</span>
+            </button>
+
+            {/* Favorite Bookmark */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowFavoritesMenu(!showFavoritesMenu)}
+                className={`p-2 rounded-xl border transition-colors cursor-pointer ${
+                  isCurrentFavorite
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                    : 'bg-slate-900 text-slate-300 hover:text-amber-400 border-slate-700/80'
+                }`}
+                title="Favorite & Preset Comparisons"
+              >
+                <Bookmark className="w-4 h-4" />
+              </button>
+
+              {/* Favorites Popover */}
+              {showFavoritesMenu && (
+                <div className="absolute right-0 top-full mt-2 w-72 rounded-2xl bg-slate-950 border border-cyan-500/40 shadow-2xl p-3 z-50 space-y-2 text-xs">
+                  <div className="flex items-center justify-between pb-1 border-b border-slate-800">
+                    <span className="font-bold text-white uppercase text-[10px] tracking-wider">Presets & Favorites</span>
+                    <button
+                      type="button"
+                      onClick={handleSaveFavorite}
+                      className="text-[10px] font-semibold text-cyan-400 hover:underline cursor-pointer"
+                    >
+                      {isCurrentFavorite ? 'Remove Current' : '+ Bookmark Current'}
+                    </button>
+                  </div>
+                  <div className="max-h-48 overflow-y-auto space-y-1" style={{ scrollbarWidth: 'thin' }}>
+                    {favorites.map((fav, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleLoadFavorite(fav)}
+                        className="w-full text-left p-2 rounded-lg bg-slate-900/60 hover:bg-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center justify-between"
+                      >
+                        <span className="font-medium truncate">{fav.name}</span>
+                        <span className="text-[10px] font-mono text-cyan-400 shrink-0 ml-2">Load</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Copy Table */}
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 transition-colors cursor-pointer relative"
+              title="Copy comparison summary to clipboard"
+            >
+              {copiedFeedback ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-cyan-400" />}
+            </button>
+
+            {/* Export CSV */}
+            <button
+              type="button"
+              onClick={handleExport}
+              className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 transition-colors cursor-pointer"
+              title="Download comparison matrix as CSV file"
+            >
+              <Download className="w-4 h-4 text-cyan-400" />
+            </button>
+
+            {/* Share Link */}
+            <button
+              type="button"
+              onClick={handleShare}
+              className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 transition-colors cursor-pointer"
+              title="Copy shareable link to this comparison"
+            >
+              {sharedFeedback ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4 text-cyan-400" />}
+            </button>
+
+            {/* Reset */}
+            <button
+              type="button"
+              onClick={handleReset}
+              className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 transition-colors cursor-pointer"
+              title="Reset to default (Hydrogen vs Carbon)"
+            >
+              <RotateCcw className="w-4 h-4 text-slate-400" />
+            </button>
+
+            {/* Close */}
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded-xl bg-slate-800 hover:bg-rose-950/80 text-slate-300 hover:text-rose-300 border border-slate-700 hover:border-rose-500/50 transition-all cursor-pointer"
+              className="p-2 rounded-xl bg-slate-800 hover:bg-rose-950/80 text-slate-300 hover:text-rose-300 border border-slate-700 hover:border-rose-500/50 transition-all cursor-pointer ml-1"
+              title="Close modal (Esc)"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Element Selection Headers */}
-        <div className={`p-4 border-b border-slate-800/80 bg-slate-900/40 grid ${showThird ? 'grid-cols-3' : 'grid-cols-2'} gap-3 shrink-0`}>
-          {/* Element 1 Selector */}
-          <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono uppercase text-cyan-400 font-bold">Slot 1</span>
-              <span className="text-[10px] font-mono text-slate-400">Z = {e1.number}</span>
-            </div>
-            <select
-              value={e1.number}
-              onChange={(e) => {
-                const found = ELEMENTS_DATA.find((item) => item.number === Number(e.target.value));
-                if (found) onSelectElement1(found);
-              }}
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs font-bold text-white focus:outline-none focus:border-cyan-400 cursor-pointer"
+        {/* 2. Section Navigation Tabs */}
+        <div className="px-5 py-2.5 border-b border-slate-800 bg-slate-900/70 flex items-center justify-between gap-2 overflow-x-auto shrink-0 select-none">
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setActiveTab('all')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                activeTab === 'all'
+                  ? 'bg-cyan-500 text-slate-950 font-bold shadow-[0_2px_10px_rgba(6,182,212,0.3)]'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
             >
-              {ELEMENTS_DATA.map((elem) => (
-                <option key={elem.number} value={elem.number}>
-                  #{elem.number} {elem.symbol} — {elem.name}
-                </option>
-              ))}
-            </select>
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span>Full Analytics Dashboard</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('metrics')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                activeTab === 'metrics'
+                  ? 'bg-cyan-500 text-slate-950 font-bold shadow-[0_2px_10px_rgba(6,182,212,0.3)]'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              <span>Metric Bars</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('analytics')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                activeTab === 'analytics'
+                  ? 'bg-violet-500 text-white font-bold shadow-[0_2px_10px_rgba(139,92,246,0.3)]'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Radar & Charts</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('table')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                activeTab === 'table'
+                  ? 'bg-cyan-500 text-slate-950 font-bold shadow-[0_2px_10px_rgba(6,182,212,0.3)]'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <TableIcon className="w-3.5 h-3.5" />
+              <span>Detailed Table</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('insights')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                activeTab === 'insights'
+                  ? 'bg-amber-500 text-slate-950 font-bold shadow-[0_2px_10px_rgba(245,158,11,0.3)]'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <Flame className="w-3.5 h-3.5" />
+              <span>Insights & Facts</span>
+            </button>
           </div>
 
-          {/* Element 2 Selector */}
-          <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono uppercase text-violet-400 font-bold">Slot 2</span>
-              <span className="text-[10px] font-mono text-slate-400">Z = {e2.number}</span>
-            </div>
-            <select
-              value={e2.number}
-              onChange={(e) => {
-                const found = ELEMENTS_DATA.find((item) => item.number === Number(e.target.value));
-                if (found) onSelectElement2(found);
-              }}
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs font-bold text-white focus:outline-none focus:border-violet-400 cursor-pointer"
-            >
-              {ELEMENTS_DATA.map((elem) => (
-                <option key={elem.number} value={elem.number}>
-                  #{elem.number} {elem.symbol} — {elem.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Element 3 Selector (Optional) */}
-          {showThird && (
-            <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2 animate-in fade-in duration-200">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono uppercase text-amber-400 font-bold">Slot 3</span>
-                <span className="text-[10px] font-mono text-slate-400">Z = {e3.number}</span>
-              </div>
-              <select
-                value={e3.number}
-                onChange={(e) => {
-                  const found = ELEMENTS_DATA.find((item) => item.number === Number(e.target.value));
-                  if (found) setElement3(found);
-                }}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs font-bold text-white focus:outline-none focus:border-amber-400 cursor-pointer"
-              >
-                {ELEMENTS_DATA.map((elem) => (
-                  <option key={elem.number} value={elem.number}>
-                    #{elem.number} {elem.symbol} — {elem.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+          <span className="text-[11px] font-mono text-slate-500 hidden lg:inline">
+            Comparing: {activeElements.map((e) => `${e.symbol} (#${e.number})`).join(' vs ')}
+          </span>
         </div>
 
-        {/* Comparison Content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6" style={{ scrollbarWidth: 'thin' }}>
-          {/* Visual Property Comparison Bars */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
-            <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-cyan-400">
-              Visual Metric Comparison
-            </h3>
-
-            <div className="space-y-4">
-              {visualMetrics.map((metric, idx) => {
-                const vals = [metric.val1, metric.val2, showThird ? metric.val3 : null].filter(
-                  (v): v is number => typeof v === 'number' && !isNaN(v) && v > 0
-                );
-                const maxVal = vals.length > 0 ? Math.max(...vals) : 1;
-
-                const pct1 = typeof metric.val1 === 'number' && metric.val1 > 0 ? (metric.val1 / maxVal) * 100 : 0;
-                const pct2 = typeof metric.val2 === 'number' && metric.val2 > 0 ? (metric.val2 / maxVal) * 100 : 0;
-                const pct3 = typeof metric.val3 === 'number' && metric.val3 > 0 ? (metric.val3 / maxVal) * 100 : 0;
-
-                return (
-                  <div key={idx} className="space-y-1.5">
-                    <div className="flex justify-between text-xs font-mono">
-                      <span className="font-semibold text-white">{metric.name}</span>
-                      <div className="flex items-center gap-3 text-[11px]">
-                        <span className="text-cyan-400 font-bold">{e1.symbol}: {metric.fmt1}</span>
-                        <span className="text-violet-400 font-bold">{e2.symbol}: {metric.fmt2}</span>
-                        {showThird && <span className="text-amber-400 font-bold">{e3.symbol}: {metric.fmt3}</span>}
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      {/* Bar 1 */}
-                      <div className="h-2 rounded-full bg-slate-950 overflow-hidden flex">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-teal-400 transition-all duration-300 shadow-[0_0_8px_rgba(6,182,212,0.4)]"
-                          style={{ width: `${Math.max(3, pct1)}%` }}
-                        />
-                      </div>
-                      {/* Bar 2 */}
-                      <div className="h-2 rounded-full bg-slate-950 overflow-hidden flex">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-violet-500 to-purple-400 transition-all duration-300 shadow-[0_0_8px_rgba(139,92,246,0.4)]"
-                          style={{ width: `${Math.max(3, pct2)}%` }}
-                        />
-                      </div>
-                      {/* Bar 3 */}
-                      {showThird && (
-                        <div className="h-2 rounded-full bg-slate-950 overflow-hidden flex">
-                          <div
-                            className="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-400 transition-all duration-300 shadow-[0_0_8px_rgba(245,158,11,0.4)]"
-                            style={{ width: `${Math.max(3, pct3)}%` }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+        {/* 3. Scrollable Content Area - Scroll anywhere here and the whole page content flows naturally */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5" style={{ scrollbarWidth: 'thin' }}>
+          {/* Streamlined Compact Element Selection Cards */}
+          <div
+            className={`grid grid-cols-1 ${
+              showThird ? 'md:grid-cols-3' : 'md:grid-cols-2'
+            } gap-2.5 sm:gap-3`}
+          >
+            <ElementSelectorCard
+              slotIndex={0}
+              element={element1}
+              onSelectElement={onSelectElement1}
+            />
+            <ElementSelectorCard
+              slotIndex={1}
+              element={element2}
+              onSelectElement={onSelectElement2}
+            />
+            {showThird && (
+              <ElementSelectorCard
+                slotIndex={2}
+                element={element3}
+                onSelectElement={setElement3}
+                canRemove
+                onRemoveSlot={() => setShowThird(false)}
+              />
+            )}
           </div>
 
-          {/* Properties Table */}
-          <div className="rounded-2xl border border-slate-800 overflow-hidden">
-            <table className="w-full text-xs font-sans text-left">
-              <thead>
-                <tr className="bg-slate-900 border-b border-slate-800 font-mono text-[11px] text-slate-400 uppercase">
-                  <th className="py-3 px-4">Property</th>
-                  <th className="py-3 px-4 text-cyan-400 font-bold">
-                    {e1.symbol} ({e1.name})
-                  </th>
-                  <th className="py-3 px-4 text-violet-400 font-bold">
-                    {e2.symbol} ({e2.name})
-                  </th>
-                  {showThird && (
-                    <th className="py-3 px-4 text-amber-400 font-bold">
-                      {e3.symbol} ({e3.name})
-                    </th>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/80 bg-slate-950/60 font-mono">
-                {rows.map((r, i) => (
-                  <tr key={i} className="hover:bg-slate-900/40 transition-colors">
-                    <td className="py-2.5 px-4 font-sans font-medium text-slate-400">
-                      {r.label}
-                    </td>
-                    <td className="py-2.5 px-4 text-white font-semibold">
-                      <span style={{ color: r.color1 }}>{r.v1}</span>
-                    </td>
-                    <td className="py-2.5 px-4 text-white font-semibold">
-                      <span style={{ color: r.color2 }}>{r.v2}</span>
-                    </td>
-                    {showThird && (
-                      <td className="py-2.5 px-4 text-white font-semibold">
-                        <span style={{ color: r.color3 }}>{r.v3}</span>
-                      </td>
-                    )}
-                  </tr>
+          {/* Empty / Incomplete Selection Guidance */}
+          {activeElements.length < 2 ? (
+            <div className="py-12 px-4 rounded-2xl bg-slate-900/40 border border-slate-800/80 text-center space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 flex items-center justify-center mx-auto">
+                <Scale className="w-6 h-6" />
+              </div>
+              <div className="max-w-md mx-auto space-y-1">
+                <h3 className="text-sm sm:text-base font-bold text-white">
+                  {activeElements.length === 1
+                    ? `1 of 2 Elements Selected (${activeElements[0].name})`
+                    : 'Choose Elements to Compare'}
+                </h3>
+                <p className="text-xs text-slate-400">
+                  {activeElements.length === 1
+                    ? 'Now select a second element in the search slot above to generate comparative charts, metric bars, and chemical insights.'
+                    : 'Search and select elements in the slots above, or launch a curated scientific comparison below:'}
+                </p>
+              </div>
+
+              {/* Quick Launch Preset Buttons */}
+              <div className="pt-2 flex flex-wrap items-center justify-center gap-2 max-w-xl mx-auto">
+                {PRESET_COMPARISONS.map((preset, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleLoadFavorite(preset)}
+                    className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-cyan-500/50 hover:bg-slate-900 text-xs font-medium text-slate-300 hover:text-white transition-all cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Sparkles className="w-3 h-3 text-cyan-400" />
+                    <span>{preset.name}</span>
+                  </button>
                 ))}
-              </tbody>
-            </table>
-          </div>
+                <button
+                  type="button"
+                  onClick={handleRandom}
+                  className="px-3 py-1.5 rounded-xl bg-violet-950/40 border border-violet-500/40 hover:bg-violet-900/50 text-xs font-semibold text-violet-300 transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <Shuffle className="w-3 h-3" />
+                  <span>Pick 2 Random Elements</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Dynamic Automatic Comparison Summary */}
+              {comparisonSummary.length > 0 && (
+                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border border-cyan-500/30 shadow-lg space-y-2">
+                  <div className="flex items-center gap-2 text-cyan-400 text-xs font-bold uppercase tracking-wider font-mono">
+                    <Sparkles className="w-4 h-4" />
+                    <span>Chemical Synthesis & Comparative Summary</span>
+                  </div>
+                  <div className="space-y-1.5 text-xs sm:text-sm text-slate-200 leading-relaxed">
+                    {comparisonSummary.map((sentence, idx) => (
+                      <p key={idx} className="flex items-start gap-2">
+                        <span className="text-cyan-400 font-bold select-none">•</span>
+                        <span>{sentence}</span>
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Section: Visual Metric Bars */}
+              {(activeTab === 'all' || activeTab === 'metrics') && (
+                <VisualMetricBars elements={activeElements} />
+              )}
+
+              {/* Section: Advanced Visual Analytics (Radar, Grouped Bar, Difference Delta) */}
+              {(activeTab === 'all' || activeTab === 'analytics') && (
+                <AdvancedVisualAnalytics elements={activeElements} />
+              )}
+
+              {/* Section: Comparison Insights */}
+              {(activeTab === 'all' || activeTab === 'insights') && (
+                <ComparisonInsights elements={activeElements} />
+              )}
+
+              {/* Section: Detailed Comparison Table */}
+              {(activeTab === 'all' || activeTab === 'table') && (
+                <DetailedComparisonTable elements={activeElements} />
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

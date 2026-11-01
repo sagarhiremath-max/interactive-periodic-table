@@ -8,7 +8,6 @@ import { ElementTooltip } from '../components/ElementTooltip';
 import { ElementModal } from '../components/ElementModal';
 import { FitTableView } from '../components/FitTableView';
 import type { TrendType } from '../data/trends';
-import { Maximize2 } from 'lucide-react';
 
 interface PeriodicTablePageProps {
   darkMode: boolean;
@@ -43,6 +42,7 @@ interface PeriodicTablePageProps {
   hasActiveFilters: boolean;
   onOpenQuiz: () => void;
   onOpenCompare: (el1?: ElementData, el2?: ElementData) => void;
+  onOpenAtomExplorer?: () => void;
   isFitViewOpen?: boolean;
   setIsFitViewOpen?: React.Dispatch<React.SetStateAction<boolean>>;
   isModalOpen?: boolean;
@@ -81,6 +81,7 @@ export const PeriodicTablePage: React.FC<PeriodicTablePageProps> = ({
   hasActiveFilters,
   onOpenQuiz,
   onOpenCompare,
+  onOpenAtomExplorer,
   isFitViewOpen: externalFitViewOpen,
   setIsFitViewOpen: setExternalFitViewOpen,
   isModalOpen: externalModalOpen,
@@ -126,13 +127,14 @@ export const PeriodicTablePage: React.FC<PeriodicTablePageProps> = ({
   };
 
   return (
-    <main className="flex-1 max-w-[1720px] w-full mx-auto px-3 sm:px-6 lg:px-8 py-5 space-y-5 animate-in fade-in duration-300">
+    <main className="flex-1 max-w-[1720px] w-full mx-auto px-3 sm:px-6 lg:px-8 pt-5 pb-24 sm:pb-28 space-y-5 animate-in fade-in duration-300">
       {/* 1. Hero Section */}
       <HeroSection
         darkMode={darkMode}
         onExploreTable={scrollToTable}
         onOpenQuiz={onOpenQuiz}
         onOpenCompare={() => onOpenCompare()}
+        onOpenAtomExplorer={onOpenAtomExplorer}
         onPickRandomElement={handlePickRandomElement}
         totalElementsCount={ELEMENTS_DATA.length}
         onOpenFitView={handleOpenFitView}
@@ -235,25 +237,6 @@ export const PeriodicTablePage: React.FC<PeriodicTablePageProps> = ({
         }}
         onAddToCompare={(el) => onOpenCompare(el, ELEMENTS_DATA[5])}
       />
-
-      {/* Floating Highlighted Button: Always visible on screen as user scrolls */}
-      {!fitViewOpen && !modalOpen && (
-        <aside aria-label="Quick Actions" className="fixed bottom-6 right-6 z-40 animate-in fade-in slide-in-from-bottom-4 duration-300">
-          <button
-            type="button"
-            onClick={handleOpenFitView}
-            className="group flex items-center gap-2.5 px-4 sm:px-5 py-3 rounded-2xl bg-gradient-to-r from-cyan-400 via-teal-300 to-cyan-300 text-slate-950 font-black text-xs sm:text-sm shadow-[0_10px_35px_rgba(6,182,212,0.65)] hover:shadow-[0_15px_45px_rgba(6,182,212,0.9)] border-2 border-cyan-100 ring-4 ring-cyan-500/30 hover:scale-105 active:scale-95 transition-all cursor-pointer"
-            title="Click to view complete periodic table without scrolling"
-          >
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-slate-950 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-slate-950"></span>
-            </span>
-            <Maximize2 size={18} strokeWidth={2.8} className="text-slate-950 group-hover:rotate-12 transition-transform" />
-            <span className="tracking-tight uppercase">Full Table (No Scroll)</span>
-          </button>
-        </aside>
-      )}
     </main>
   );
 };

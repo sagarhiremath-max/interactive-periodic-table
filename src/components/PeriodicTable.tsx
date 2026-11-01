@@ -162,10 +162,10 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
             <button
               type="button"
               onClick={onResetAllFilters}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-rose-300 bg-slate-800/80 hover:bg-rose-950/60 border border-slate-700 hover:border-rose-500/50 shadow-sm transition-all cursor-pointer"
+              className="h-8 inline-flex items-center gap-1.5 px-2.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-rose-300 bg-slate-800/80 hover:bg-rose-950/60 border border-slate-700 hover:border-rose-500/50 shadow-sm transition-all cursor-pointer"
               title="Reset every selection, filter, search, and active element"
             >
-              <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+              <RotateCcw className="w-3 h-3 text-slate-400" />
               <span>Reset All</span>
             </button>
           )}
@@ -174,15 +174,11 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
             <button
               type="button"
               onClick={onOpenFitView}
-              className="relative inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-black text-slate-950 bg-gradient-to-r from-cyan-400 via-teal-300 to-cyan-300 hover:from-cyan-300 hover:to-teal-200 border-2 border-cyan-100 shadow-[0_0_25px_rgba(34,211,238,0.7)] hover:shadow-[0_0_35px_rgba(34,211,238,0.9)] ring-2 ring-cyan-400/50 transition-all cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0 animate-pulse"
+              className="h-8 inline-flex items-center gap-1.5 px-3 rounded-lg text-xs font-bold text-slate-950 bg-gradient-to-r from-cyan-400 to-teal-300 hover:from-cyan-300 hover:to-teal-200 border border-cyan-100 shadow-[0_0_12px_rgba(34,211,238,0.5)] transition-all cursor-pointer"
               title="Show the complete periodic table fitted to screen without any scrolling"
             >
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-slate-950 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-slate-950"></span>
-              </span>
-              <Maximize2 className="w-4 h-4 text-slate-950" strokeWidth={2.8} />
-              <span className="uppercase tracking-tight">Show Complete Table (No Scroll)</span>
+              <Maximize2 className="w-3 h-3 text-slate-950" strokeWidth={2.5} />
+              <span className="uppercase tracking-tight">Full Table</span>
             </button>
           )}
 

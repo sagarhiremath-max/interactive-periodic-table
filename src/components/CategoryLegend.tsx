@@ -1,5 +1,6 @@
 import React from 'react';
 import { type ElementData } from '../data/elements';
+import { RotateCcw } from 'lucide-react';
 
 interface CategoryLegendProps {
   selectedCategory: string;
@@ -51,7 +52,7 @@ export const CategoryLegend: React.FC<CategoryLegendProps> = ({
   ];
 
   return (
-    <div className="w-full flex items-center justify-between gap-2 overflow-x-auto py-2.5 px-3 rounded-xl bg-slate-900/60 border border-cyan-500/20 backdrop-blur-md shadow-sm select-none">
+    <div className="w-full flex items-center justify-between gap-3 overflow-x-auto py-2 px-3 rounded-xl bg-slate-900/60 border border-cyan-500/20 backdrop-blur-md shadow-sm select-none scrollbar-none">
       <div className="flex items-center gap-1.5 flex-nowrap">
         <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-cyan-400 mr-1 shrink-0">
           CATEGORIES:
@@ -68,7 +69,7 @@ export const CategoryLegend: React.FC<CategoryLegendProps> = ({
               onClick={() => onSelectCategory(isSelected ? 'all' : item.id)}
               onMouseEnter={() => onHoverCategory(item.id)}
               onMouseLeave={() => onHoverCategory(null)}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all duration-150 shrink-0 cursor-pointer border ${
+              className={`h-8 inline-flex items-center gap-1.5 px-2.5 rounded-lg text-[11px] font-medium transition-all duration-150 shrink-0 cursor-pointer border ${
                 isSelected
                   ? 'bg-slate-800 text-white border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.3)] ring-1 ring-cyan-400/50'
                   : isHovered
@@ -96,9 +97,11 @@ export const CategoryLegend: React.FC<CategoryLegendProps> = ({
         <button
           type="button"
           onClick={() => onSelectCategory('all')}
-          className="text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-900 hover:text-white transition-colors shrink-0 cursor-pointer"
+          className="h-8 inline-flex items-center gap-1 text-[10px] font-mono font-semibold uppercase px-2.5 rounded-lg bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-900 hover:text-white transition-colors shrink-0 cursor-pointer"
+          title="Reset category selection"
         >
-          Reset Filter
+          <RotateCcw className="w-3 h-3" />
+          <span>Reset</span>
         </button>
       )}
     </div>

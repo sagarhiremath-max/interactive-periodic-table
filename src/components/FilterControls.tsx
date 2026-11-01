@@ -70,11 +70,11 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
   ];
 
   return (
-    <div className="w-full rounded-2xl bg-slate-900/60 border border-cyan-500/20 backdrop-blur-md p-3.5 sm:p-4 text-xs font-sans text-slate-200 shadow-md space-y-3.5">
-      {/* Top Filter Bar: Quick Filters */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+    <div className="w-full rounded-2xl bg-slate-900/60 border border-cyan-500/20 backdrop-blur-md p-3 sm:p-4 text-xs font-sans text-slate-200 shadow-md space-y-3">
+      {/* Top Filter Bar: Core Filters with Consistent Heights & Gap */}
+      <div className="flex items-center justify-between gap-2.5 flex-wrap">
         {/* Classification Tabs: All / Metals / Nonmetals / Metalloids */}
-        <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-950/60 border border-slate-800">
+        <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-950/70 border border-slate-800">
           <span className="text-[10px] uppercase font-mono text-slate-400 px-2 hidden sm:inline">
             Class:
           </span>
@@ -83,7 +83,7 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
               key={c}
               type="button"
               onClick={() => onSelectClassification(c)}
-              className={`px-2.5 py-1 rounded-lg text-xs capitalize transition-all cursor-pointer ${
+              className={`h-7 px-2.5 rounded-lg text-xs capitalize transition-all cursor-pointer font-medium ${
                 activeClassification === c
                   ? 'bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/40 shadow-sm'
                   : 'text-slate-400 hover:text-white'
@@ -95,7 +95,7 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
         </div>
 
         {/* State Filter Tabs: All / Solid / Liquid / Gas */}
-        <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-950/60 border border-slate-800">
+        <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-950/70 border border-slate-800">
           <span className="text-[10px] uppercase font-mono text-slate-400 px-2 hidden sm:inline">
             State:
           </span>
@@ -104,7 +104,7 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
               key={s}
               type="button"
               onClick={() => onSelectStateFilter(s)}
-              className={`px-2.5 py-1 rounded-lg text-xs capitalize transition-all cursor-pointer ${
+              className={`h-7 px-2.5 rounded-lg text-xs capitalize transition-all cursor-pointer font-medium ${
                 activeStateFilter === s
                   ? 'bg-violet-500/20 text-violet-300 font-semibold border border-violet-500/40 shadow-sm'
                   : 'text-slate-400 hover:text-white'
@@ -116,7 +116,7 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
         </div>
 
         {/* Color Mode / Heatmap Selector */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-950/60 border border-slate-800">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-950/70 border border-slate-800">
           <span className="text-[10px] uppercase font-mono text-cyan-400 px-1.5 flex items-center gap-1">
             <TrendingUp className="w-3 h-3" />
             <span className="hidden sm:inline">Color Mode:</span>
@@ -124,7 +124,7 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
           <select
             value={trendMode}
             onChange={(e) => onSelectTrend(e.target.value as TrendType)}
-            className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-cyan-400 font-medium cursor-pointer"
+            className="h-7 bg-slate-900 border border-slate-700 rounded-lg px-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-400 font-medium cursor-pointer"
           >
             {trends.map((t) => (
               <option key={t.id} value={t.id}>
@@ -134,13 +134,13 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
           </select>
         </div>
 
-        {/* Controls toggles */}
+        {/* Action Controls: Standardized h-9 (36px) Heights */}
         <div className="flex items-center gap-2">
           {/* Layout Mode Toggle */}
           <button
             type="button"
             onClick={onToggleLayout}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-200 transition-all cursor-pointer"
+            className="h-9 inline-flex items-center gap-1.5 px-3 rounded-lg text-xs font-medium bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-200 transition-all cursor-pointer"
             title="Toggle between 18-column Standard and 32-column Extended layout"
           >
             <Columns className="w-3.5 h-3.5 text-cyan-400" />
@@ -152,16 +152,12 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
             <button
               type="button"
               onClick={onOpenFitView}
-              className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black text-slate-950 bg-gradient-to-r from-cyan-400 to-teal-300 hover:from-cyan-300 hover:to-teal-200 border border-cyan-100 shadow-[0_0_15px_rgba(34,211,238,0.6)] ring-2 ring-cyan-400/40 transition-all cursor-pointer"
+              className="h-9 inline-flex items-center gap-1.5 px-3 rounded-lg text-xs font-bold text-slate-950 bg-gradient-to-r from-cyan-400 to-teal-300 hover:from-cyan-300 hover:to-teal-200 border border-cyan-100 shadow-[0_0_12px_rgba(34,211,238,0.5)] transition-all cursor-pointer"
               title="Show complete periodic table fitted to screen without any scrolling"
             >
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-slate-950 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-slate-950"></span>
-              </span>
-              <Maximize2 className="w-3.5 h-3.5 text-slate-950" strokeWidth={2.8} />
-              <span className="hidden sm:inline uppercase tracking-tight">Fit Table (No Scroll)</span>
-              <span className="sm:hidden">No Scroll</span>
+              <Maximize2 className="w-3.5 h-3.5 text-slate-950" strokeWidth={2.5} />
+              <span className="hidden sm:inline uppercase tracking-tight">Full Table</span>
+              <span className="sm:hidden">Fit</span>
             </button>
           )}
 
@@ -169,21 +165,22 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
           <button
             type="button"
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
+            className={`h-9 inline-flex items-center gap-1.5 px-3 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
               showAdvanced
                 ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
                 : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:text-white'
             }`}
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>Advanced Filters</span>
+            <span className="hidden sm:inline">Advanced Filters</span>
+            <span className="sm:hidden">Filters</span>
           </button>
 
           {/* Reset Every Selection Button */}
           <button
             type="button"
             onClick={onResetFilters}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+            className={`h-9 inline-flex items-center gap-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
               hasActiveFilters
                 ? 'text-rose-300 bg-rose-950/70 border-rose-500/50 hover:bg-rose-900/70 shadow-[0_0_12px_rgba(244,63,94,0.35)]'
                 : 'text-slate-400 bg-slate-800/80 border-slate-700 hover:text-white hover:border-slate-600'
@@ -191,7 +188,7 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
             title="Reset every selection, filter, search, and active element"
           >
             <RotateCcw className={`w-3.5 h-3.5 ${hasActiveFilters ? 'text-rose-400' : 'text-slate-400'}`} />
-            <span>Reset All</span>
+            <span>Reset</span>
             {hasActiveFilters && (
               <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
             )}

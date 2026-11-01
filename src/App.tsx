@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate, useLocation, Link } from 'react-router-dom';
 import { ELEMENTS_DATA, type ElementData } from './data/elements';
 import { Navbar } from './components/Navbar';
 import { CompareModal } from './components/CompareModal';
@@ -8,11 +8,15 @@ import { ElectronExplorerModal } from './components/ElectronExplorerModal';
 import { ChemistryGuideModal } from './components/ChemistryGuideModal';
 import { AboutModal } from './components/AboutModal';
 import { HelpModal } from './components/HelpModal';
+import { AtomExplorerModal } from './components/atom-explorer/AtomExplorerModal';
+import { FeedbackButton } from './components/FeedbackButton';
+import { FeedbackModal } from './components/FeedbackModal';
 import { useFavorites } from './utils/useFavorites';
 import type { TrendType } from './data/trends';
 import { PeriodicTablePage } from './pages/PeriodicTablePage';
+import { AdminFeedbackPage } from './pages/AdminFeedbackPage';
 import { NotFoundPage } from './pages/NotFoundPage';
-import { Atom } from 'lucide-react';
+import { Atom, Maximize2 } from 'lucide-react';
 
 // Inner component to access router hooks like useNavigate and useLocation
 function AppContent() {
@@ -48,15 +52,18 @@ function AppContent() {
 
   // Modals state
   const [isCompareOpen, setIsCompareOpen] = useState(false);
-  const [compareElement1, setCompareElement1] = useState<ElementData | null>(ELEMENTS_DATA[0]); // Hydrogen
-  const [compareElement2, setCompareElement2] = useState<ElementData | null>(ELEMENTS_DATA[5]); // Carbon
+  const [compareElement1, setCompareElement1] = useState<ElementData | null>(null);
+  const [compareElement2, setCompareElement2] = useState<ElementData | null>(null);
   const [isQuizOpen, setIsQuizOpen] = useState(false);
+  const [isAtomExplorerOpen, setIsAtomExplorerOpen] = useState(false);
+  const [atomExplorerElement, setAtomExplorerElement] = useState<ElementData | null>(null);
   const [isElectronExplorerOpen, setIsElectronExplorerOpen] = useState(false);
   const [isTrendsGuideOpen, setIsTrendsGuideOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isFitViewOpen, setIsFitViewOpen] = useState(false);
   const [isElementModalOpen, setIsElementModalOpen] = useState(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   // Search input ref
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -109,12 +116,39 @@ function AppContent() {
         setIsElementModalOpen(true);
       }
     }
+
+    const compareParam = params.get('compare');
+    if (compareParam) {
+      const parts = compareParam.split(',').map((p) => p.trim());
+      if (parts.length >= 2) {
+        const match1 = ELEMENTS_DATA.find(
+          (el) => String(el.number) === parts[0] || el.symbol.toLowerCase() === parts[0].toLowerCase()
+        );
+        const match2 = ELEMENTS_DATA.find(
+          (el) => String(el.number) === parts[1] || el.symbol.toLowerCase() === parts[1].toLowerCase()
+        );
+        if (match1 && match2) {
+          setCompareElement1(match1);
+          setCompareElement2(match2);
+          setIsCompareOpen(true);
+        }
+      }
+    }
   }, [location.pathname, location.search, navigate]);
+
+  const handleOpenAtomExplorer = (el?: ElementData | null) => {
+    if (el) {
+      setAtomExplorerElement(el);
+    }
+    setIsAtomExplorerOpen(true);
+  };
 
   // Keyboard navigation shortcuts: '/' for search, Esc to close/clear
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        if (isAtomExplorerOpen) setIsAtomExplorerOpen(false);
+        if (isFeedbackOpen) setIsFeedbackOpen(false);
         if (isElementModalOpen) setIsElementModalOpen(false);
         if (selectedElement) setSelectedElement(null);
         if (isCompareOpen) setIsCompareOpen(false);
@@ -128,12 +162,20 @@ function AppContent() {
       } else if (e.key === '/' && document.activeElement !== searchInputRef.current) {
         e.preventDefault();
         searchInputRef.current?.focus();
+      } else if (
+        (e.key === 'a' || e.key === 'A') &&
+        !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)
+      ) {
+        e.preventDefault();
+        handleOpenAtomExplorer();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [
+    isAtomExplorerOpen,
+    isFeedbackOpen,
     isElementModalOpen,
     selectedElement,
     isCompareOpen,
@@ -218,8 +260,8 @@ function AppContent() {
   };
 
   const handleOpenCompare = (el1?: ElementData, el2?: ElementData) => {
-    if (el1) setCompareElement1(el1);
-    if (el2) setCompareElement2(el2);
+    setCompareElement1(el1 || null);
+    setCompareElement2(el2 || null);
     setIsCompareOpen(true);
   };
 
@@ -237,11 +279,12 @@ function AppContent() {
         onSearchChange={setSearchQuery}
         onClearSearch={() => setSearchQuery('')}
         searchInputRef={searchInputRef}
-        onOpenCompare={() => setIsCompareOpen(true)}
+        onOpenCompare={() => handleOpenCompare()}
         onOpenQuiz={() => setIsQuizOpen(true)}
         onOpenTrends={() => {
           setIsTrendsGuideOpen(true);
         }}
+        onOpenAtomExplorer={() => handleOpenAtomExplorer()}
         onOpenElectronExplorer={() => setIsElectronExplorerOpen(true)}
         onPickRandomElement={handlePickRandomElement}
         onOpenAbout={() => setIsAboutOpen(true)}
@@ -296,6 +339,7 @@ function AppContent() {
                 hasActiveFilters={hasActiveFilters}
                 onOpenQuiz={() => setIsQuizOpen(true)}
                 onOpenCompare={handleOpenCompare}
+                onOpenAtomExplorer={() => handleOpenAtomExplorer()}
                 isFitViewOpen={isFitViewOpen}
                 setIsFitViewOpen={setIsFitViewOpen}
                 isModalOpen={isElementModalOpen}
@@ -303,11 +347,19 @@ function AppContent() {
               />
             }
           />
+          <Route path="/admin" element={<AdminFeedbackPage />} />
+          <Route path="/admin/feedback" element={<AdminFeedbackPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>
 
       {/* 3. Global Modals */}
+      <FeedbackModal
+        isOpen={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
+        darkMode={darkMode}
+      />
+
       <CompareModal
         isOpen={isCompareOpen}
         onClose={() => setIsCompareOpen(false)}
@@ -333,6 +385,13 @@ function AppContent() {
         onClose={() => setIsElectronExplorerOpen(false)}
         initialElement={selectedElement || ELEMENTS_DATA[25]} // Iron
         darkMode={darkMode}
+        onOpenAtomExplorer={(el) => handleOpenAtomExplorer(el)}
+      />
+
+      <AtomExplorerModal
+        isOpen={isAtomExplorerOpen}
+        onClose={() => setIsAtomExplorerOpen(false)}
+        initialElement={atomExplorerElement || selectedElement || undefined}
       />
 
       <ChemistryGuideModal
@@ -389,14 +448,56 @@ function AppContent() {
             </button>
             <button
               type="button"
-              onClick={() => setIsCompareOpen(true)}
+              onClick={() => handleOpenCompare()}
               className="hover:text-cyan-300 transition-colors cursor-pointer"
             >
               Compare
             </button>
+            <button
+              type="button"
+              onClick={() => setIsFeedbackOpen(true)}
+              className="text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer"
+            >
+              Report a Mistake
+            </button>
+            <Link
+              to="/admin"
+              className="hover:text-cyan-300 transition-colors cursor-pointer"
+            >
+              Admin
+            </Link>
           </div>
         </div>
       </footer>
+
+      {/* 5. Unified Floating Quick Action Bar */}
+      <div className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-40 flex flex-col-reverse sm:flex-row items-end sm:items-center gap-3 font-sans pointer-events-none">
+        {/* Full Table (No Scroll) Button */}
+        {location.pathname === '/' && !isFitViewOpen && !isElementModalOpen && (
+          <button
+            type="button"
+            onClick={() => setIsFitViewOpen(true)}
+            className="pointer-events-auto shrink-0 group flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full bg-gradient-to-r from-cyan-400 via-teal-300 to-cyan-300 text-slate-950 font-black text-xs sm:text-sm shadow-[0_8px_30px_rgba(6,182,212,0.6)] hover:shadow-[0_12px_40px_rgba(6,182,212,0.85)] border-2 border-cyan-100 ring-2 ring-cyan-500/30 hover:scale-105 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+            title="Click to view complete periodic table without scrolling"
+          >
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-slate-950 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-slate-950"></span>
+            </span>
+            <Maximize2 size={15} strokeWidth={2.8} className="text-slate-950 group-hover:rotate-12 transition-transform" />
+            <span className="tracking-tight uppercase">Full Table</span>
+          </button>
+        )}
+
+        {/* Feedback Button */}
+        {!isFeedbackOpen && (
+          <FeedbackButton
+            onClick={() => setIsFeedbackOpen(true)}
+            isOpen={false}
+            inline
+          />
+        )}
+      </div>
     </div>
   );
 }

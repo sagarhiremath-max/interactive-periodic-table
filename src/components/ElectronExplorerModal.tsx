@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Layers } from 'lucide-react';
+import { X, Layers, Atom } from 'lucide-react';
 import { type ElementData, ELEMENTS_DATA, CATEGORIES } from '../data/elements';
 import { BohrModel } from './BohrModel';
 import { ElectronShellDiagram } from './ElectronShellDiagram';
@@ -9,6 +9,7 @@ interface ElectronExplorerModalProps {
   onClose: () => void;
   initialElement?: ElementData | null;
   darkMode?: boolean;
+  onOpenAtomExplorer?: (element: ElementData) => void;
 }
 
 export const ElectronExplorerModal: React.FC<ElectronExplorerModalProps> = ({
@@ -16,6 +17,7 @@ export const ElectronExplorerModal: React.FC<ElectronExplorerModalProps> = ({
   onClose,
   initialElement,
   darkMode = true,
+  onOpenAtomExplorer,
 }) => {
   const [selectedNum, setSelectedNum] = useState<number>(initialElement?.number || 26); // Default to Iron (#26)
   const currentElement = ELEMENTS_DATA.find((e) => e.number === selectedNum) || ELEMENTS_DATA[25];
@@ -65,6 +67,22 @@ export const ElectronExplorerModal: React.FC<ElectronExplorerModalProps> = ({
                 </option>
               ))}
             </select>
+
+            {/* Quick 3D Atom Transition */}
+            {onOpenAtomExplorer && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenAtomExplorer(currentElement);
+                }}
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-cyan-200 bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/40 hover:border-cyan-300 transition-all cursor-pointer shadow-[0_0_12px_rgba(6,182,212,0.25)]"
+                title="Launch in 3D Atom Explorer"
+              >
+                <Atom className="w-3.5 h-3.5 text-cyan-400 animate-spin-slow" />
+                <span>Open in 3D</span>
+              </button>
+            )}
 
             <button
               type="button"
