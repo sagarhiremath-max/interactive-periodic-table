@@ -514,7 +514,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
-                    <span>Sending to Sagar...</span>
+                    <span>Sending...</span>
                   </>
                 ) : (
                   <>
