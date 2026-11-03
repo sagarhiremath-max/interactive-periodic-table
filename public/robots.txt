@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sagarhiremath-max.github.io/interactive-periodic-table/sitemap.xml

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   X,
   ChevronLeft,
@@ -122,9 +123,23 @@ export const ElementModal: React.FC<ElementModalProps> = ({
   };
 
   const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setShareCopied(true);
-    setTimeout(() => setShareCopied(false), 2000);
+    try {
+      const shareUrl = `${window.location.origin}${window.location.pathname}#/element/${element.number}`;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareUrl);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = shareUrl;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    } catch {
+      setShareCopied(false);
+    }
   };
 
   return (
@@ -275,6 +290,16 @@ export const ElementModal: React.FC<ElementModalProps> = ({
             >
               {shareCopied ? <Check size={16} className="text-emerald-400" /> : <Share2 size={16} />}
             </button>
+
+            <Link
+              to={`/element/${element.number}`}
+              onClick={onClose}
+              title="Open full dedicated page for this element"
+              className="px-2.5 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 hover:text-cyan-200 transition-colors border border-cyan-500/40 flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
+            >
+              <ExternalLink size={13} />
+              <span className="hidden sm:inline">Full Page</span>
+            </Link>
 
             <button
               onClick={onClose}

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { BrowserRouter, Routes, Route, useNavigate, useLocation, Link } from 'react-router-dom';
+import { HashRouter, Routes, Route, useNavigate, useLocation, Link } from 'react-router-dom';
 import { ELEMENTS_DATA, type ElementData } from './data/elements';
 import { Navbar } from './components/Navbar';
 import { CompareModal } from './components/CompareModal';
@@ -14,6 +14,7 @@ import { FeedbackModal } from './components/FeedbackModal';
 import { useFavorites } from './utils/useFavorites';
 import type { TrendType } from './data/trends';
 import { PeriodicTablePage } from './pages/PeriodicTablePage';
+import { ElementDetailsPage } from './pages/ElementDetailsPage';
 import { AdminFeedbackPage } from './pages/AdminFeedbackPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { Atom, Maximize2 } from 'lucide-react';
@@ -192,12 +193,14 @@ function AppContent() {
   const searchMatchCount = useMemo(() => {
     if (!searchQuery.trim()) return 0;
     const q = searchQuery.trim().toLowerCase();
+    const rawClean = q.replace(/^#|^z=/, '').trim();
     return ELEMENTS_DATA.filter(
       (el) =>
         el.name.toLowerCase().includes(q) ||
         el.symbol.toLowerCase() === q ||
         el.symbol.toLowerCase().startsWith(q) ||
-        `${el.number}` === q
+        `${el.number}` === q ||
+        `${el.number}` === rawClean
     ).length;
   }, [searchQuery]);
 
@@ -344,6 +347,15 @@ function AppContent() {
                 setIsFitViewOpen={setIsFitViewOpen}
                 isModalOpen={isElementModalOpen}
                 setIsModalOpen={setIsElementModalOpen}
+              />
+            }
+          />
+          <Route
+            path="/element/:atomicNumber"
+            element={
+              <ElementDetailsPage
+                darkMode={darkMode}
+                onOpenCompare={handleOpenCompare}
               />
             }
           />
@@ -504,9 +516,9 @@ function AppContent() {
 
 export function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <AppContent />
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 

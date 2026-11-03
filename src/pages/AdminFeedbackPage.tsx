@@ -489,6 +489,11 @@ export const AdminFeedbackPage: React.FC = () => {
             </button>
           </form>
 
+          <div className="p-3 rounded-xl bg-cyan-950/40 border border-cyan-500/30 text-cyan-200 text-xs leading-relaxed">
+            <span className="font-bold text-cyan-300 block mb-1">Deployment Notice</span>
+            The live feedback database API runs in local development mode (<code className="font-mono text-cyan-400">npm run dev</code>). On GitHub Pages static hosting, feedback submissions are safely preserved in browser LocalStorage and dispatched directly via email.
+          </div>
+
           <div className="pt-2 text-center border-t border-slate-800">
             <Link
               to="/"

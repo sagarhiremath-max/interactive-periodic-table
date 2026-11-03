@@ -62,11 +62,12 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
 
     // 2. Search
     if (cleanQuery) {
+      const rawClean = cleanQuery.replace(/^#|^z=/, '').trim();
       const matchName = el.name.toLowerCase().includes(cleanQuery);
       const matchSymbol =
         el.symbol.toLowerCase() === cleanQuery ||
         el.symbol.toLowerCase().startsWith(cleanQuery);
-      const matchNum = `${el.number}` === cleanQuery;
+      const matchNum = `${el.number}` === cleanQuery || `${el.number}` === rawClean;
       if (!matchName && !matchSymbol && !matchNum) return false;
     }
 
@@ -319,12 +320,14 @@ export const PeriodicTable: React.FC<PeriodicTableProps> = ({
               {/* Render all 118 Elements */}
               {elements.map((el) => {
                 const matches = isElementMatching(el);
+                const rawClean = cleanQuery.replace(/^#|^z=/, '').trim();
                 const isSearchMatch = Boolean(
                   cleanQuery &&
                     (el.name.toLowerCase().includes(cleanQuery) ||
                       el.symbol.toLowerCase() === cleanQuery ||
                       el.symbol.toLowerCase().startsWith(cleanQuery) ||
-                      `${el.number}` === cleanQuery)
+                      `${el.number}` === cleanQuery ||
+                      `${el.number}` === rawClean)
                 );
 
                 return (

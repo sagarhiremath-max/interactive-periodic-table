@@ -1,30 +1,62 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ELEMENTS — Advanced Interactive Periodic Table of Elements</title>
-    <meta name="description" content="Explore every chemical element, 3D Bohr models, electron orbital configurations, thermodynamic phase shifts, and periodic trends in a futuristic science-lab interface." />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2306b6d4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='2' fill='%2322d3ee'/><ellipse cx='12' cy='12' rx='10' ry='4' transform='rotate(0 12 12)'/><ellipse cx='12' cy='12' rx='10' ry='4' transform='rotate(60 12 12)'/><ellipse cx='12' cy='12' rx='10' ry='4' transform='rotate(120 12 12)'/></svg>" />
+    <title>ELEMENTS - Advanced Interactive Periodic Table of Elements</title>
+    <meta name="title" content="ELEMENTS - Advanced Interactive Periodic Table of Elements" />
+    <meta name="description" content="Explore all 118 chemical elements, 3D Bohr models, electron orbital configurations, thermodynamic phase shifts, periodic trends, and chemistry quizzes in a futuristic science-lab interface." />
+    <meta name="keywords" content="Periodic Table, Interactive Periodic Table, Chemical Elements, Bohr Model, Electron Configuration, Chemistry Quiz, Chemistry Lab, Science Education, IUPAC, Element Comparison" />
+    <meta name="author" content="Sagar G Hiremath" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://sagarhiremath-max.github.io/interactive-periodic-table/" />
+
+    <!-- Theme Colors -->
+    <meta name="theme-color" content="#050814" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://sagarhiremath-max.github.io/interactive-periodic-table/" />
+    <meta property="og:title" content="ELEMENTS - Advanced Interactive Periodic Table" />
+    <meta property="og:description" content="Interactive scientific web app with Bohr orbital visualizer, periodic trends, element comparisons, 3D atom explorer, and chemistry quiz." />
+    <meta property="og:site_name" content="Elements Lab" />
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:url" content="https://sagarhiremath-max.github.io/interactive-periodic-table/" />
+    <meta name="twitter:title" content="ELEMENTS - Advanced Interactive Periodic Table" />
+    <meta name="twitter:description" content="Explore all 118 chemical elements with real-time Bohr models, periodic trends, and comparisons." />
+
+    <!-- Favicon & Icons -->
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="apple-touch-icon" href="./favicon.svg" />
+
+    <!-- Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Schema.org Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "ELEMENTS Interactive Periodic Table",
+      "url": "https://sagarhiremath-max.github.io/interactive-periodic-table/",
+      "applicationCategory": "EducationalApplication",
+      "genre": "Chemistry, Science, Education",
+      "browserRequirements": "Requires JavaScript. Requires HTML5.",
+      "description": "Advanced interactive periodic table of all 118 chemical elements with real-time Bohr model SVG rendering, electron configurations, periodic trends, and comparison cockpit.",
+      "author": {
+        "@type": "Person",
+        "name": "Sagar G Hiremath"
+      }
+    }
+    </script>
   </head>
   <body class="bg-[#050814] text-slate-100 antialiased selection:bg-cyan-500/30 selection:text-cyan-200 min-h-screen">
     <div id="root"></div>
-    <script type="text/javascript">
-      // Single Page Apps for GitHub Pages redirect decode
-      (function(l) {
-        if (l.search[1] === '/' ) {
-          var decoded = l.search.slice(1).split('&').map(function(s) { 
-            return s.replace(/~and~/g, '&')
-          }).join('?');
-          window.history.replaceState(null, null,
-              l.pathname.slice(0, -1) + decoded + l.hash
-          );
-        }
-      }(window.location))
-    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -145,6 +145,19 @@ export const QuizModal: React.FC<QuizModalProps> = ({
     });
   }, []);
 
+  // Handle timeout on a question
+  const handleTimeExpire = () => {
+    if (isAnswered || !questions[currentIndex]) return;
+    setIsAnswered(true);
+    setStreak(0);
+
+    const currQ = questions[currentIndex];
+    setUserAnswers(prev => [
+      ...prev,
+      { question: currQ, selectedOptionIndex: -1, isCorrect: false }
+    ]);
+  };
+
   // Timer management during active quiz
   useEffect(() => {
     if (quizState !== 'playing' || !isTimed || isAnswered) {
@@ -167,19 +180,6 @@ export const QuizModal: React.FC<QuizModalProps> = ({
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [quizState, isTimed, isAnswered, currentIndex]);
-
-  // Handle timeout on a question
-  const handleTimeExpire = () => {
-    if (isAnswered || !questions[currentIndex]) return;
-    setIsAnswered(true);
-    setStreak(0);
-
-    const currQ = questions[currentIndex];
-    setUserAnswers(prev => [
-      ...prev,
-      { question: currQ, selectedOptionIndex: -1, isCorrect: false }
-    ]);
-  };
 
   // Generate rich, verified questions if API is unavailable (e.g. offline or static GitHub Pages)
   const generateFallbackQuestions = (count: number, topic: string, diff: string): BankQuestion[] => {
