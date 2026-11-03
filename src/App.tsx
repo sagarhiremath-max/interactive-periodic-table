@@ -17,7 +17,7 @@ import { PeriodicTablePage } from './pages/PeriodicTablePage';
 import { ElementDetailsPage } from './pages/ElementDetailsPage';
 import { AdminFeedbackPage } from './pages/AdminFeedbackPage';
 import { NotFoundPage } from './pages/NotFoundPage';
-import { Atom, Maximize2 } from 'lucide-react';
+import { Atom, Maximize2, CheckCircle2 } from 'lucide-react';
 
 // Inner component to access router hooks like useNavigate and useLocation
 function AppContent() {
@@ -65,6 +65,16 @@ function AppContent() {
   const [isFitViewOpen, setIsFitViewOpen] = useState(false);
   const [isElementModalOpen, setIsElementModalOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Auto-dismiss toast notification
+  useEffect(() => {
+    if (!toastMessage) return;
+    const timer = setTimeout(() => {
+      setToastMessage(null);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [toastMessage]);
 
   // Search input ref
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -370,6 +380,8 @@ function AppContent() {
         isOpen={isFeedbackOpen}
         onClose={() => setIsFeedbackOpen(false)}
         darkMode={darkMode}
+        activeElement={selectedElement}
+        onSubmitted={(msg) => setToastMessage(msg)}
       />
 
       <CompareModal
@@ -510,6 +522,28 @@ function AppContent() {
           />
         )}
       </div>
+
+      {/* Floating Toast Notification */}
+      {toastMessage && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed top-5 right-5 sm:top-6 sm:right-6 z-50 max-w-md flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-900/95 text-slate-100 border border-cyan-500/50 shadow-[0_10px_35px_rgba(6,182,212,0.35)] backdrop-blur-md animate-in fade-in slide-in-from-top-3 duration-300"
+        >
+          <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0" />
+          <p className="text-xs sm:text-sm font-medium text-slate-100 leading-snug flex-1">
+            {toastMessage}
+          </p>
+          <button
+            type="button"
+            onClick={() => setToastMessage(null)}
+            className="text-slate-400 hover:text-white p-1 -mr-1 transition-colors cursor-pointer text-base leading-none"
+            aria-label="Dismiss notification"
+          >
+            &times;
+          </button>
+        </div>
+      )}
     </div>
   );
 }
